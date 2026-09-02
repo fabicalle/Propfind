@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from '@/lib/supabase/server';
+import { getServerSessionFromRequest } from '@/lib/supabase/server';
 
 const protectedRoutes = ['/perfil', '/publicar', '/favoritos'];
 
@@ -17,7 +17,7 @@ export async function proxy(request: NextRequest) {
 
   if (protectedRoutes.some((route) => path === route || path.startsWith(`${route}/`))) {
     try {
-      const session = await getServerSession();
+      const session = await getServerSessionFromRequest(request);
       if (!session?.user) {
         const loginUrl = new URL('/login', request.url);
         loginUrl.searchParams.set('redirect', path);

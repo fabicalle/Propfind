@@ -1,9 +1,9 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type Session } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 
-export async function getServerSession() {
+export async function getServerSession(): Promise<Session | null> {
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -22,6 +22,28 @@ export async function getServerSession() {
           } catch {
             // Server Component: can't set cookies
           }
+        },
+      },
+    }
+  );
+
+  const { data: { session } } = await supabase.auth.getSession();
+  return session;
+}
+
+export async function getServerSessionFromRequest(request: NextRequest): Promise<Session | null> {
+  const supabase = createServerClient(
+    env.supabaseUrl,
+    env.supabaseAnonKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value, options)
+          );
         },
       },
     }
