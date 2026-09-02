@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useSessionStore } from '@/store/useSessionStore';
 import { useTelemetryStore } from '@/store/useTelemetryStore';
+import { csrfFetch } from '@/lib/security/csrfClient';
 
 export function useTelemetry() {
   const { userSession, analyticsConsent } = useSessionStore();
@@ -22,7 +23,7 @@ export function useTelemetry() {
     if (events.length === 0) return;
 
     try {
-      await fetch('/api/telemetry', {
+      await csrfFetch('/api/telemetry', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

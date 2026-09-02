@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { useSwipeStore } from '@/store/useSwipeStore';
 import type { SwipeDirection, Property } from '@/store/useAppStore';
+import { csrfFetch } from '@/lib/security/csrfClient';
 
 const SWIPE_THRESHOLD = 100;
 const VELOCITY_THRESHOLD = 500;
@@ -61,7 +62,7 @@ export function useSwipeDeck(
     setPrefetchStatus('fetching');
 
     try {
-      const response = await fetch('/api/properties/search', {
+      const response = await csrfFetch('/api/properties/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

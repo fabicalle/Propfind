@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { FilterCriteria, Property } from '@/store/useAppStore';
+import { csrfFetch } from '@/lib/security/csrfClient';
 import { useFilterStore } from '@/store/useFilterStore';
 import { PropertyCard } from '@/components/PropertyCard';
 import { SwipeDeck } from '@/components/SwipeDeck';
@@ -125,7 +126,7 @@ function PropertiesPageInner() {
 
       const discardedIds = useFavoritesStore.getState().discarded.map((d) => d.property.id);
 
-      const response = await fetch('/api/properties/search', {
+      const response = await csrfFetch('/api/properties/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

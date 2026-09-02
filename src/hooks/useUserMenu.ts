@@ -3,6 +3,7 @@ import { createSupabaseClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { useGuestSwipes } from '@/hooks/useGuestSwipes';
 import { useSessionStore } from '@/store/useSessionStore';
+import { csrfFetch } from '@/lib/security/csrfClient';
 
 interface User {
   email?: string | null;
@@ -68,7 +69,7 @@ export function useUserMenu(onOpenProfile?: () => void): UseUserMenuResult {
       const dislikes = guestSwipes.filter((s) => s.action === 'DISLIKE');
 
       for (const swipe of [...likes, ...dislikes]) {
-        await fetch('/api/user/migrate-guest', {
+        await csrfFetch('/api/user/migrate-guest', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -11,6 +11,7 @@ import type { Property, SwipeDirection } from '@/store/useAppStore';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useGuestSwipes } from '@/hooks/useGuestSwipes';
+import { csrfFetch } from '@/lib/security/csrfClient';
 
 interface SwipeDeckProps {
   initialProperties?: Property[];
@@ -62,7 +63,7 @@ export function SwipeDeck({ initialProperties = [] }: SwipeDeckProps) {
 
   const loadInitialCards = useCallback(async () => {
     try {
-      const response = await fetch('/api/properties/search', {
+      const response = await csrfFetch('/api/properties/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ limit: 5 }),

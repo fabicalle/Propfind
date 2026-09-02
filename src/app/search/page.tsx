@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import type { FilterCriteria, Property } from '@/store/useAppStore';
 import { useFilterStore } from '@/store/useFilterStore';
 import { PropertyCard } from '@/components/PropertyCard';
+import { csrfFetch } from '@/lib/security/csrfClient';
 import { loadFiltersLocally } from '@/lib/persistence/filterPersistence';
 
 const DEFAULT_FILTER: FilterCriteria = {
@@ -100,7 +101,7 @@ export default function SearchPage() {
         filters.areaMax = localFilter.areaMax;
       }
 
-      const response = await fetch('/api/properties/search', {
+      const response = await csrfFetch('/api/properties/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
