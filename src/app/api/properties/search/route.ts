@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SearchPropertiesUseCase } from '@/application/use-cases/propertyUseCases';
 import { PrismaPropertyRepository, PrismaInteractionRepository } from '@/infrastructure/repositories/PrismaRepositories';

@@ -32,7 +32,7 @@ export default function LoginPage() {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: { user: unknown } | null } }) => {
       if (session?.user) {
         router.replace(redirectTo);
       } else {

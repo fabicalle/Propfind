@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { generateCsrfToken, setCsrfTokenCookie } from '@/lib/security/csrf';
 
-export async function GET() {
+export const GET = async (request: NextRequest) => {
   const token = generateCsrfToken();
   const response = NextResponse.json({ token });
   setCsrfTokenCookie(response, token);
   return response;
-}
+};

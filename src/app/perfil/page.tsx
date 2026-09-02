@@ -122,16 +122,6 @@ export default function ProfilePage() {
     let mounted = true;
     let isRedirecting = false;
 
-    const waitForSession = async (supabase: ReturnType<typeof createSupabaseClient>, attempts = 3, delayMs = 250) => {
-      for (let i = 0; i < attempts; i++) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) return session;
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-      const { data: { session } } = await supabase.auth.getSession();
-      return session;
-    };
-
     const verify = async () => {
       const supabase = createSupabaseClient();
 
@@ -142,6 +132,16 @@ export default function ProfilePage() {
         }
         return;
       }
+
+      const waitForSession = async (supabaseClient: NonNullable<ReturnType<typeof createSupabaseClient>>, attempts = 3, delayMs = 250) => {
+        for (let i = 0; i < attempts; i++) {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (session?.user) return session;
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        return session;
+      };
 
       const session = await waitForSession(supabase);
 

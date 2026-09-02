@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useGuestSwipes } from '@/hooks/useGuestSwipes';
 import { useSessionStore } from '@/store/useSessionStore';
 import { csrfFetch } from '@/lib/security/csrfClient';
+import type { Session } from '@supabase/supabase-js';
 
 interface User {
   email?: string | null;
@@ -33,13 +34,13 @@ export function useUserMenu(onOpenProfile?: () => void): UseUserMenuResult {
 
     let previousUser: User | null = null;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
       previousUser = session?.user ?? null;
       setUser(previousUser);
       setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string, session: Session | null) => {
       const newUser = session?.user ?? null;
       setUser(newUser);
 

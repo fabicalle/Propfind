@@ -75,7 +75,7 @@ export default function PublicarPage() {
         }
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (_event, session) => {
+          (_event: string, session: { user: { id: string } | null } | null) => {
             const userId = session?.user?.id || null;
             setUserId(userId);
             if (userId) {
