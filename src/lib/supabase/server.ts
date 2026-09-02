@@ -1,4 +1,5 @@
-import { createServerClient, type Session } from '@supabase/ssr';
+import { createServerClient } from '@supabase/ssr';
+import type { Session } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
@@ -42,7 +43,7 @@ export async function getServerSessionFromRequest(request: NextRequest): Promise
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value, options)
+            request.cookies.set({ name, value, ...options })
           );
         },
       },
@@ -85,7 +86,7 @@ export function createRouteHandlerSupabaseClient(request: NextRequest, response:
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set({ name, value, ...options })
           );
         },
       },
