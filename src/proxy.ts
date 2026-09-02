@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from '@/lib/supabase/server';
 
 const protectedRoutes = ['/perfil', '/publicar', '/favoritos'];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const path = request.nextUrl.pathname;
 
@@ -15,8 +16,14 @@ export function proxy(request: NextRequest) {
   response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: http:; connect-src 'self' https://api.telegram.org https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none';");
 
   if (protectedRoutes.some((route) => path === route || path.startsWith(`${route}/`))) {
-    const sessionToken = request.cookies.get('sb-access-token')?.value;
-    if (!sessionToken) {
+    try {
+      const session = await getServerSession();
+      if (!session?.user) {
+        const loginUrl = new URL('/login', request.url);
+        loginUrl.searchParams.set('redirect', path);
+        return NextResponse.redirect(loginUrl);
+      }
+    } catch {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', path);
       return NextResponse.redirect(loginUrl);
