@@ -13,15 +13,33 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+
     const params = new URLSearchParams(window.location.search);
     const urlError = params.get('error');
     const urlMessage = params.get('message');
+    const redirectTo = params.get('redirect') || '/';
+
     if (urlError) setError(urlError);
     if (urlMessage) setMessage(urlMessage);
-  }, []);
+
+    const supabase = createSupabaseClient();
+    if (!supabase) {
+      setChecking(false);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        router.replace(redirectTo);
+      } else {
+        setChecking(false);
+      }
+    });
+  }, [router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +66,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.push('/');
+      const params = new URLSearchParams(window.location.search);
+      const redirectTo = params.get('redirect') || '/';
+      router.push(redirectTo);
       router.refresh();
     } catch {
       setError('Error inesperado al iniciar sesión');
@@ -69,10 +89,11 @@ export default function LoginPage() {
         return;
       }
 
+      const returnTo = new URLSearchParams(window.location.search).get('redirect') || '/';
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=/`,
+          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(returnTo)}`,
           queryParams: { access_type: 'offline', prompt: 'consent' },
         },
       });
@@ -86,6 +107,14 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-app">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-border-subtle border-t-content-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-app px-4">
@@ -185,11 +214,11 @@ export default function LoginPage() {
             </form>
 
              <p className="text-center text-xs text-content-secondary">
-               ¿No tenés cuenta?{' '}
-               <button
-                 type="button"
-                 onClick={() => router.push('/signup')}
-                 className="font-semibold text-brand-terracotta underline underline-offset-2 hover:text-brand-terracotta/80"
+              ¿No tenés cuenta?{' '}
+              <button
+                type="button"
+                onClick={() => router.push('/signup')}
+                className="font-semibold text-brand-terracotta underline underline-offset-2 hover:text-brand-terracotta/80"
               >
                 Crear cuenta
               </button>
