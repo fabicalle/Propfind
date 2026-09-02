@@ -43,6 +43,14 @@ export function useUserMenu(onOpenProfile?: () => void): UseUserMenuResult {
       const newUser = session?.user ?? null;
       setUser(newUser);
 
+      if (event === 'SIGNED_IN' && newUser) {
+        useSessionStore.getState().setUserSession({
+          sessionId: newUser.id,
+          userId: newUser.id,
+          isAuthenticated: true,
+        });
+      }
+
       if (event === 'SIGNED_IN' && newUser && !previousUser && swipes.length > 0) {
         migrateGuestSwipes(newUser, swipes);
       }
@@ -55,7 +63,7 @@ export function useUserMenu(onOpenProfile?: () => void): UseUserMenuResult {
     });
 
     return () => subscription.unsubscribe();
-  }, [swipes]);
+  }, []);
 
   const migrateGuestSwipes = async (newUser: User, guestSwipes: { propertyId: string; action: 'LIKE' | 'DISLIKE'; timestamp: number }[]) => {
     try {

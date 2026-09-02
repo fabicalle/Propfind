@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { motionTokens } from '@/lib/motion/tokens';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ interface UserMenuProps {
 
 export function UserMenu({ onOpenProfile }: UserMenuProps) {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const favoritesCount = useFavoritesStore((state) => state.favorites.length);
   const { user, isLoading, handleLogin, handleLogout } = useUserMenu(onOpenProfile);
@@ -50,11 +51,17 @@ export function UserMenu({ onOpenProfile }: UserMenuProps) {
     );
   }
 
+  const handleNavigate = (path: string) => {
+    setIsOpen(false);
+    router.push(path);
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
-        onClick={() => router.push('/perfil')}
+        onClick={() => setIsOpen((prev) => !prev)}
         aria-label="Abrir menú de usuario"
+        aria-expanded={isOpen}
         className="focus:ring-brand-terracotta/50 flex items-center gap-2 rounded-xl p-1 outline-none transition-all hover:bg-app active:scale-95 focus:ring-2 focus:outline-none"
       >
         {avatarUrl ? (
@@ -74,6 +81,48 @@ export function UserMenu({ onOpenProfile }: UserMenuProps) {
           </span>
         )}
       </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            className="absolute right-0 mt-2 w-56 overflow-hidden rounded-xl bg-card shadow-xl ring-1 ring-border-subtle"
+            initial={{ opacity: 0, y: -8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.96 }}
+            transition={motionTokens.spring.snappy}
+          >
+            <div className="py-1.5">
+              <button
+                onClick={() => handleNavigate('/perfil')}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-content-primary transition-colors hover:bg-content-primary/5"
+              >
+                <User className="h-4 w-4 text-content-secondary" />
+                <span>Mi Perfil</span>
+                <ChevronRight className="ml-auto h-4 w-4 text-content-secondary" />
+              </button>
+              <button
+                onClick={() => handleNavigate('/favoritos')}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-content-primary transition-colors hover:bg-content-primary/5"
+              >
+                <Heart className="h-4 w-4 text-content-secondary" />
+                <span>Mis Favoritos</span>
+                <ChevronRight className="ml-auto h-4 w-4 text-content-secondary" />
+              </button>
+              <div className="my-1.5 border-t border-border-subtle" />
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  handleLogout();
+                }}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Cerrar Sesión</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

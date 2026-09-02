@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { env } from '@/lib/env';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next') || '/';
@@ -20,7 +22,24 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(next, requestUrl.origin));
   }
 
-  const supabase = await createServerSupabaseClient();
+  const response = NextResponse.redirect(new URL(next, requestUrl.origin));
+
+  const supabase = createServerClient(
+    env.supabaseUrl,
+    env.supabaseAnonKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
 
   if (!supabase) {
     return NextResponse.redirect(new URL('/login?error=auth_failed', requestUrl.origin));
@@ -34,7 +53,7 @@ export async function GET(request: Request) {
     }
 
     if (data?.session) {
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+      return response;
     }
   } catch {
     return NextResponse.redirect(new URL('/login?error=auth_failed', requestUrl.origin));

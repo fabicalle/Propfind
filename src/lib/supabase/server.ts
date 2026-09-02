@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { env } from '@/lib/env';
 
 export async function getServerSession() {
@@ -44,6 +45,25 @@ export async function createServerSupabaseClient() {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+}
+
+export function createRouteHandlerSupabaseClient(request: NextRequest, response: NextResponse) {
+  return createServerClient(
+    env.supabaseUrl,
+    env.supabaseAnonKey,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
           );
         },
       },
