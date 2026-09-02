@@ -1,0 +1,262 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  anonymous
+  google
+  apple
+  email
+}
+
+enum InteractionType {
+  SWIPE_LEFT
+  SWIPE_RIGHT
+  SUPERLIKE
+  VIEW_DETAIL
+  CONTACT_REALTOR
+  SAVE
+  SHARE
+}
+
+enum MetricType {
+  SWIPE_RIGHT_RATE
+  SWIPE_LEFT_RATE
+  SUPERLIKE_RATE
+  AVG_PRICE_VIEWED
+  AVG_SESSION_DURATION
+  PROPERTIES_VIEWED
+  DETAIL_VIEW_RATE
+  CONTACT_RATE
+  SAVE_RATE
+}
+
+enum TimeBucket {
+  hourly
+  daily
+  weekly
+  monthly
+}
+
+enum PropertyType {
+  apartment
+  house
+  condo
+  land
+  commercial
+}
+
+enum ListingType {
+  sale
+  rent
+}
+
+enum SellerType {
+  OWNER
+  AGENCY
+}
+
+enum UserRole {
+  FINDER
+  REALTOR
+  OWNER
+  DEVELOPER_B2B
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String?   @unique
+  authProvider   AuthProvider @default(anonymous) @map("auth_provider")
+  authProviderId String?   @map("auth_provider_id")
+  profile        Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @map("updated_at")
+  consentFlags   Json      @default("{\"analytics\": false, \"marketing\": false, \"personalization\": false}") @map("consent_flags")
+
+  interactions   UserInteraction[]
+  savedFilters   SavedFilter[]
+  savedProperties UserSavedProperties[]
+  searchTelemetry SearchTelemetry[]
+  publisherProfile PublisherProfile?
+  preferences    UserPreferences?
+
+  @@index([email])
+  @@index([authProvider, authProviderId])
+  @@map("users")
+}
+
+model Property {
+  id           String   @id @default(uuid())
+  title        String
+  description  String?
+  price        Decimal  @db.Decimal(14, 2)
+  priceCurrency String  @default("USD") @map("price_currency")
+  totalMonthlyCost Decimal? @db.Decimal(10, 2) @map("total_monthly_cost")
+  areaM2       Decimal? @map("area_m2") @db.Decimal(10, 2)
+  rooms        Int?
+  bedrooms     Int?
+  bathrooms    Int?
+  propertyType PropertyType? @map("property_type")
+  listingType  ListingType @default(sale) @map("listing_type")
+  listingSubType String? @map("listing_sub_type")
+  sellerType   SellerType? @map("seller_type")
+  creditApproved Boolean? @map("credit_approved")
+  parking      String?
+  lat          Float
+  lng          Float
+  geoJson      Json?    @map("geojson")
+  address      String?
+  neighborhood String?
+  city         String?
+  geoHash      String?  @map("geo_hash")
+  images       Json     @default("[]")
+  amenities    Json     @default("[]")
+  sourceUrl    String?  @map("source_url")
+  sourceId     String?  @map("source_id")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime? @map("updated_at")
+  publisherId  String?  @map("publisher_id")
+
+  interactions UserInteraction[]
+  savedBy      UserSavedProperties[]
+  publisher    PublisherProfile? @relation(fields: [publisherId], references: [id], onDelete: SetNull)
+
+  @@index([geoHash])
+  @@index([price])
+  @@index([totalMonthlyCost])
+  @@index([isActive])
+  @@index([propertyType, listingType])
+  @@index([listingSubType])
+  @@index([neighborhood])
+  @@index([createdAt])
+  @@map("properties")
+}
+
+model PublisherProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  companyName  String?  @map("company_name")
+  licenseNumber String? @map("license_number")
+  phone        String?
+  verified     Boolean  @default(false)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  properties   Property[]
+
+  @@index([userId])
+  @@map("publisher_profiles")
+}
+
+model UserInteraction {
+  id              String          @id @default(uuid())
+  userId          String?         @map("user_id")
+  propertyId      String          @map("property_id")
+  interactionType InteractionType @map("interaction_type")
+  swipeDirection  String?         @map("swipe_direction")
+  sessionId       String          @map("session_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  metadata        Json            @default("{}")
+
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  property        Property        @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([propertyId])
+  @@index([sessionId, createdAt])
+  @@index([interactionType])
+  @@index([createdAt])
+  @@map("user_interactions")
+}
+
+model SavedFilter {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  role       UserRole  @default(FINDER)
+  filterName String    @map("filter_name")
+  criteria   Json
+  isDefault  Boolean   @default(false) @map("is_default")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime? @map("updated_at")
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("saved_filters")
+}
+
+model UserSavedProperties {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  propertyId String   @map("property_id")
+  tags       Json     @default("[]")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId, createdAt])
+  @@index([propertyId])
+  @@map("user_saved_properties")
+}
+
+model B2BAggregatedMetric {
+  id            String     @id @default(uuid())
+  metricType    MetricType @map("metric_type")
+  zoneGeoHash   String?    @map("zone_geo_hash")
+  neighborhood  String?    @map("neighborhood")
+  timeBucket    TimeBucket @map("time_bucket")
+  bucketStart   DateTime   @map("bucket_start")
+  metricValue   Decimal    @db.Decimal(16, 6)
+  sampleSize    Int        @map("sample_size")
+  metadata      Json       @default("{}")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  @@unique([metricType, zoneGeoHash, neighborhood, timeBucket, bucketStart])
+  @@index([metricType, timeBucket, bucketStart])
+  @@index([zoneGeoHash, bucketStart])
+  @@index([neighborhood, bucketStart])
+  @@map("b2b_aggregated_metrics")
+}
+
+model SearchTelemetry {
+  id              String    @id @default(uuid())
+  sessionId       String    @map("session_id")
+  userId          String?   @map("user_id")
+  filtersApplied  Json      @default("{}") @map("filters_applied")
+  resultsCount    Int       @default(0)
+  zoomLevel       Int?      @map("zoom_level")
+  searchDurationMs Int?     @map("search_duration_ms")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("search_telemetry")
+}
+
+model UserPreferences {
+  id           String    @id @default(uuid())
+  userId       String    @unique @map("user_id")
+  filters      Json      @default("{}")
+  lastSyncedAt DateTime  @default(now()) @map("last_synced_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_preferences")
+}
+
