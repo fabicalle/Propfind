@@ -13,6 +13,7 @@ type EnvConfig = {
   nextAuthSecret?: string;
   analyticsId?: string;
   googleMapsApiKey?: string;
+  resendApiKey?: string;
 };
 
 function getRequiredEnv(key: string): string {
@@ -45,6 +46,7 @@ export function getEnvConfig(): EnvConfig {
     nextAuthSecret: getOptionalEnv('NEXTAUTH_SECRET'),
     analyticsId: getOptionalEnv('NEXT_PUBLIC_ANALYTICS_ID'),
     googleMapsApiKey: getOptionalEnv('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY'),
+    resendApiKey: getOptionalEnv('RESEND_API_KEY'),
   };
 }
 

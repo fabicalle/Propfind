@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withRateLimit } from '@/lib/rateLimit';
+import { sendContactNotification } from '@/lib/notifications/email';
 
 const contactSchema = {
   propertyId: { type: 'string', required: true },
@@ -73,42 +74,18 @@ export async function POST(request: NextRequest) {
 
     const contactInfo = property.contactInfo as Record<string, unknown> | null;
     const recipientEmail = contactInfo?.email as string | undefined;
-    const recipientWhatsApp = contactInfo?.whatsapp as string | undefined;
 
-    if (recipientEmail || recipientWhatsApp) {
-      try {
-        const text = [
-          `Nueva consulta por "${propertyTitle}"`,
-          `De: ${name.trim()}`,
-          `Email: ${email.trim()}`,
-          phone?.trim() ? `Teléfono: ${phone.trim()}` : null,
-          ``,
-          `Mensaje:`,
-          message.trim(),
-        ].filter(Boolean).join('\n');
-
-        const payload: Record<string, unknown> = {
-          to: recipientEmail || recipientWhatsAPP,
-          propertyTitle,
-          senderName: name.trim(),
-          senderEmail: email.trim(),
-          senderPhone: phone?.trim() || null,
-          message: message.trim(),
-          text,
-        };
-
-        if (recipientWhatsApp) {
-          payload.whatsapp = `https://wa.me/${recipientWhatsAPP}?text=${encodeURIComponent(text)}`;
-        }
-
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/notifications/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
-      } catch {
-        // ignore notification failures
-      }
+    if (recipientEmail) {
+      await sendContactNotification({
+        to: recipientEmail,
+        propertyTitle,
+        senderName: name.trim(),
+        senderEmail: email.trim(),
+        senderPhone: phone?.trim() || undefined,
+        message: message.trim(),
+      }).catch((err) => {
+        console.error('Resend notification error:', err);
+      });
     }
 
     return NextResponse.json({ success: true, data: contactMessage }, { status: 201 });
