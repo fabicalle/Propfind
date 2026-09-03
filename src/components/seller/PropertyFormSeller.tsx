@@ -405,7 +405,7 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
         >
           <div>
             <label className="mb-2 block text-sm font-medium text-content-primary">Tipo de operación</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {(['sale', 'rent'] as ListingType[]).map((type) => (
                 <button
                   key={type}
@@ -430,7 +430,7 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
 
           <div>
             <label className="mb-2 block text-sm font-medium text-content-primary">Tipo de propiedad</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PROPERTY_TYPES.map((type) => (
                 <button
                   key={type.value}
@@ -477,7 +477,7 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-content-primary">Cochera</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(['any', '1+', '2+'] as const).map((option) => (
                 <button
                   key={option}
@@ -543,7 +543,7 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
           >
             <div>
               <label className="mb-2 block text-sm font-medium text-content-primary">Tipo de alquiler</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(['', 'temporal'] as const).map((option) => (
                   <button
                     key={option || 'standard'}
