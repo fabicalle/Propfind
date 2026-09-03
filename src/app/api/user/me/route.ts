@@ -13,13 +13,12 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getSessionFromRequest(request);
     if (!session?.user) {
-      logAuthFailure(request, 'missing_session');
       return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'No autorizado' } }, { status: 401 });
     }
 
     let user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { profile: true, email: true },
+      select: { id: true, email: true, profile: true },
     });
 
     if (!user) {
@@ -31,16 +30,17 @@ export async function GET(request: NextRequest) {
           authProviderId: session.user.id,
           profile: {},
         },
-        select: { profile: true, email: true },
+        select: { id: true, email: true, profile: true },
       });
     }
 
     const profile = (user.profile as Record<string, unknown>) || {};
+    const email = session.user.email || user.email || `${session.user.id}@anonymous.local`;
 
     return NextResponse.json({
       success: true,
       data: {
-        email: user.email,
+        email,
         firstName: (profile.firstName as string) || '',
         lastName: (profile.lastName as string) || '',
         phone: (profile.phone as string) || '',
