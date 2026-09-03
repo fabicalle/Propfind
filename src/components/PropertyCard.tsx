@@ -265,7 +265,7 @@ export function PropertyCard({ property, isTop, dragOffset, isDragging, variant 
                 ))}
               </div>
 
-              {!isSwipeCard && (
+              {!isSwipeCard && variant !== 'grid' && (
                 <div className="flex items-center justify-center gap-3">
                   {onReject && (
                     <button
