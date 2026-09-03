@@ -17,13 +17,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'No autorizado' } }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { profile: true, email: true },
     });
 
     if (!user) {
-      return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Usuario no encontrado' } }, { status: 404 });
+      user = await prisma.user.create({
+        data: {
+          id: session.user.id,
+          email: session.user.email ?? `${session.user.id}@anonymous.local`,
+          authProvider: 'google',
+          authProviderId: session.user.id,
+          profile: {},
+        },
+        select: { profile: true, email: true },
+      });
     }
 
     const profile = (user.profile as Record<string, unknown>) || {};
@@ -73,13 +82,22 @@ async function PATCH_impl(request: NextRequest) {
       return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Ingresá un número válido con código de área' } }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { profile: true },
     });
 
     if (!user) {
-      return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Usuario no encontrado' } }, { status: 404 });
+      user = await prisma.user.create({
+        data: {
+          id: session.user.id,
+          email: session.user.email ?? `${session.user.id}@anonymous.local`,
+          authProvider: 'google',
+          authProviderId: session.user.id,
+          profile: {},
+        },
+        select: { profile: true },
+      });
     }
 
     const currentProfile = (user.profile as Record<string, unknown>) || {};
