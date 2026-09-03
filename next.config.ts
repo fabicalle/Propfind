@@ -23,22 +23,7 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
   watchOptions: {
-    poll: 1000,
-    aggregateTimeout: 300,
-    ignored: [
-      '**/node_modules/**',
-      '**/.git/**',
-      '**/dist/**',
-      '**/build/**',
-      '**/coverage/**',
-      '**/*.test.ts',
-      '**/*.test.tsx',
-      '**/*.spec.ts',
-      '**/*.spec.tsx',
-      '**/test-results/**',
-      '**/playwright-report/**',
-      '**/docs/**',
-    ],
+    pollIntervalMs: 1000,
   },
 };
 

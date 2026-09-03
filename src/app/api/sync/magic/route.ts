@@ -35,19 +35,6 @@ async function POST_impl(request: NextRequest) {
       );
     }
 
-    await prisma.userPreferences.upsert({
-      where: { userId: session.user.id },
-      update: {
-        filters: (filters || {}) as Prisma.InputJsonValue,
-        lastSyncedAt: new Date(),
-      },
-      create: {
-        userId: session.user.id,
-        filters: (filters || {}) as Prisma.InputJsonValue,
-        lastSyncedAt: new Date(),
-      },
-    });
-
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Error en sync' }, { status: 500 });

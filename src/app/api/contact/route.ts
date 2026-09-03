@@ -1,47 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
-import { withRateLimit } from '@/lib/rateLimit';
 import { sendContactNotification } from '@/lib/notifications/email';
-
-const contactSchema = {
-  propertyId: { type: 'string', required: true },
-  propertyTitle: { type: 'string', required: true },
-  name: { type: 'string', required: true, minLength: 2 },
-  email: { type: 'string', required: true, email: true },
-  phone: { type: 'string', required: false },
-  message: { type: 'string', required: true, minLength: 10 },
-};
 
 export async function POST(request: NextRequest) {
   const originError = rejectInvalidOrigin(request);
   if (originError) return originError;
 
-  const rateLimitResponse = withRateLimit(request, { windowMs: 60_000, max: 5 });
-  if (rateLimitResponse) return rateLimitResponse;
-
   try {
     const body = await request.json();
     const { propertyId, propertyTitle, name, email, phone, message } = body as Record<string, unknown>;
 
-    const errors: string[] = [];
-    if (typeof propertyId !== 'string' || !propertyId.trim()) errors.push('propertyId inválido');
-    if (typeof propertyTitle !== 'string' || !propertyTitle.trim()) errors.push('propertyTitle inválido');
-    if (typeof name !== 'string' || name.trim().length < 2) errors.push('Nombre inválido');
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Email inválido');
-    if (typeof phone === 'string' && phone.trim()) {
-      const cleaned = phone.replace(/[\s\-()]/g, '');
-      if (!/^\+?\d{7,15}$/.test(cleaned)) errors.push('Teléfono inválido');
+    if (typeof propertyId !== 'string' || !propertyId.trim()) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'propertyId inválido' } }, { status: 400 });
     }
-    if (typeof message !== 'string' || message.trim().length < 10) errors.push('Mensaje inválido');
-
-    if (errors.length > 0) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: errors[0] } }, { status: 400 });
+    if (typeof propertyTitle !== 'string' || !propertyTitle.trim()) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'propertyTitle inválido' } }, { status: 400 });
+    }
+    if (typeof name !== 'string' || name.trim().length < 2) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Nombre inválido' } }, { status: 400 });
+    }
+    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Email inválido' } }, { status: 400 });
+    }
+    if (typeof message !== 'string' || message.trim().length < 10) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Mensaje inválido' } }, { status: 400 });
     }
 
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      select: { id: true, publisherId: true, contactInfo: true },
+      select: { id: true, publisherId: true },
     });
 
     if (!property) {
@@ -51,10 +39,10 @@ export async function POST(request: NextRequest) {
     const contactMessage = await prisma.contactMessage.create({
       data: {
         propertyId,
-        propertyTitle,
+        propertyTitle: propertyTitle.trim(),
         senderName: name.trim(),
         senderEmail: email.trim(),
-        senderPhone: phone?.trim() || null,
+        senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : null,
         message: message.trim(),
         recipientId: property.publisherId || null,
       },
@@ -72,20 +60,32 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const contactInfo = property.contactInfo as Record<string, unknown> | null;
-    const recipientEmail = contactInfo?.email as string | undefined;
-
-    if (recipientEmail) {
-      await sendContactNotification({
-        to: recipientEmail,
-        propertyTitle,
-        senderName: name.trim(),
-        senderEmail: email.trim(),
-        senderPhone: phone?.trim() || undefined,
-        message: message.trim(),
-      }).catch((err) => {
-        console.error('Resend notification error:', err);
+    if (property.publisherId) {
+      const publisher = await prisma.publisherProfile.findUnique({
+        where: { id: property.publisherId },
+        select: { phone: true },
       });
+
+      const user = await prisma.user.findUnique({
+        where: { id: property.publisherId },
+        select: { email: true },
+      });
+
+      const recipientEmail = user?.email || null;
+      const recipientPhone = publisher?.phone || null;
+
+      if (recipientEmail) {
+        await sendContactNotification({
+          to: recipientEmail,
+          propertyTitle: propertyTitle.trim(),
+          senderName: name.trim(),
+          senderEmail: email.trim(),
+          senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : undefined,
+          message: message.trim(),
+        }).catch((err) => {
+          console.error('Resend notification error:', err);
+        });
+      }
     }
 
     return NextResponse.json({ success: true, data: contactMessage }, { status: 201 });

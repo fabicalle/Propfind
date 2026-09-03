@@ -38,7 +38,7 @@ async function handleBatch(events: TelemetryEvent[]): Promise<void> {
               sessionId: event.hashedSessionId,
               userId: event.userId ?? null,
               filtersApplied: (event.payload.filtersApplied || {}) as Prisma.InputJsonValue,
-              resultsCount: Number(event.payload.resultsCount || 0),
+              results_count: Number(event.payload.resultsCount || 0),
               searchDurationMs: event.payload.searchDurationMs ? Number(event.payload.searchDurationMs) : null,
               zoomLevel: event.payload.zoomLevel ? Number(event.payload.zoomLevel) : null,
             },
@@ -52,7 +52,7 @@ async function handleBatch(events: TelemetryEvent[]): Promise<void> {
               sessionId: event.hashedSessionId,
               userId: event.userId ?? null,
               filtersApplied: {},
-              resultsCount: 0,
+              results_count: 0,
               zoomLevel: event.payload.zoomLevel ? Number(event.payload.zoomLevel) : null,
             },
           });

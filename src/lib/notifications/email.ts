@@ -1,7 +1,4 @@
-import { Resend } from 'resend';
 import { env } from '@/lib/env';
-
-export const resend = new Resend(env.resendApiKey);
 
 export async function sendContactNotification(params: {
   to: string;
@@ -11,7 +8,16 @@ export async function sendContactNotification(params: {
   senderPhone?: string;
   message: string;
 }) {
+  const apiKey = env.resendApiKey;
+  if (!apiKey) {
+    console.warn('Resend not configured: missing RESEND_API_KEY');
+    return { success: false, error: new Error('Missing RESEND_API_KEY') };
+  }
+
   try {
+    const { Resend } = await import('resend');
+    const resend = new Resend(apiKey);
+
     const { data, error } = await resend.emails.send({
       from: 'PropFind <noreply@propfind.com.ar>',
       to: params.to,

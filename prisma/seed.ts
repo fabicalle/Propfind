@@ -1,4 +1,4 @@
-import { PrismaClient, PropertyType, ListingType, UserRole, InteractionType } from '@prisma/client';
+import { PrismaClient, PropertyType, ListingType, InteractionType } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
 const prisma = new PrismaClient();
@@ -115,7 +115,7 @@ async function main() {
 
   const users = [];
   for (let i = 0; i < 20; i++) {
-    const role = i < 10 ? UserRole.FINDER : i < 15 ? UserRole.REALTOR : UserRole.OWNER;
+    const role = i < 10 ? 'FINDER' : i < 15 ? 'REALTOR' : 'OWNER';
     const user = await prisma.user.upsert({
       where: { email: `user${i}@example.com` },
       update: {},
@@ -128,7 +128,7 @@ async function main() {
     });
     users.push(user);
 
-    if (role !== UserRole.FINDER) {
+    if (role !== 'FINDER') {
       await prisma.publisherProfile.upsert({
         where: { userId: user.id },
         update: {},
