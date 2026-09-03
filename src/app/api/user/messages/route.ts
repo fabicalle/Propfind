@@ -13,8 +13,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'No autorizado' } }, { status: 401 });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { email: true },
+    });
+
     const messages = await prisma.contactMessage.findMany({
-      where: { recipientId: session.user.id },
+      where: {
+        OR: [
+          { recipientId: session.user.id },
+          ...(user?.email ? [{ senderEmail: user.email }] : []),
+        ],
+      },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
