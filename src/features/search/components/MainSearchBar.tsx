@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { searchLocations, type LocationIndex } from '@/shared/data/locations';
+import { useGeoIP } from '@/features/properties/hooks/useGeoIP';
 
 export interface MainSearchBarProps {
   placeholder?: string;
@@ -17,6 +18,7 @@ export function MainSearchBar({ placeholder = 'Buscar por ciudad, provincia, dep
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { departmentId, departmentName, city, region, loading: geoLoading } = useGeoIP();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,7 +54,7 @@ export function MainSearchBar({ placeholder = 'Buscar por ciudad, provincia, dep
         params.set('zona', location.localityName || '');
       }
       const queryString = params.toString();
-      router.push(`/propiedades${queryString ? `?${queryString}` : ''}`);
+      router.push(`/properties${queryString ? `?${queryString}` : ''}`);
       setIsOpen(false);
       setQuery('');
     },
@@ -67,12 +69,24 @@ export function MainSearchBar({ placeholder = 'Buscar por ciudad, provincia, dep
       } else if (query.trim()) {
         const params = new URLSearchParams();
         params.set('location', query.trim());
-        router.push(`/propiedades?${params.toString()}`);
+        router.push(`/properties?${params.toString()}`);
         setIsOpen(false);
         setQuery('');
+      } else if (!query.trim() && departmentName) {
+        const params = new URLSearchParams();
+        if (departmentId && departmentId !== 'all') {
+          params.set('departamento', departmentName);
+        } else if (region) {
+          params.set('provincia', region);
+        }
+        if (city) {
+          params.set('zona', city);
+        }
+        const queryString = params.toString();
+        router.push(`/properties${queryString ? `?${queryString}` : ''}`);
       }
     },
-    [suggestions, activeIndex, navigateToResults, query, router]
+    [suggestions, activeIndex, navigateToResults, query, router, departmentName, departmentId, region, city]
   );
 
   const handleKeyDown = useCallback(

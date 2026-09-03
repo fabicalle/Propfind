@@ -20,7 +20,7 @@ export default function HomePage() {
     setActiveFilter({
       listingType: filter.value as 'rent' | 'sale',
     });
-    router.push('/propiedades');
+    router.push('/properties');
   }, [setActiveFilter, router]);
 
   return (
