@@ -8,7 +8,7 @@ import { createSupabaseClient } from '@/lib/supabase/client';
 import { useSessionStore } from '@/store/useSessionStore';
 import { csrfFetch } from '@/lib/security/csrfClient';
 
-type Tab = 'profile' | 'listings';
+type Tab = 'profile' | 'listings' | 'messages';
 
 interface ProfileForm {
   firstName: string;
@@ -25,6 +25,18 @@ interface Property {
   city: string | null;
   images: { url: string }[];
   listingType: string;
+}
+
+interface Message {
+  id: string;
+  propertyId: string;
+  propertyTitle: string;
+  senderName: string;
+  senderEmail: string;
+  senderPhone: string | null;
+  message: string;
+  status: string;
+  createdAt: string;
 }
 
 export default function ProfilePage() {
@@ -44,6 +56,7 @@ export default function ProfilePage() {
   });
 
   const [properties, setProperties] = useState<Property[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -118,6 +131,28 @@ export default function ProfilePage() {
     }
   }, []);
 
+  const loadMessages = useCallback(async () => {
+    try {
+      const supabase = createSupabaseClient();
+      if (!supabase) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const res = await fetch('/api/user/messages', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      const result = await res.json().catch(() => ({}));
+
+      if (res.ok) {
+        const items = result.data?.messages || result.messages || [];
+        setMessages(items);
+      }
+    } catch {
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
     let isRedirecting = false;
@@ -167,6 +202,7 @@ export default function ProfilePage() {
         setLoading(true);
         loadProfile();
         loadProperties();
+        loadMessages();
       }
     };
 
@@ -175,7 +211,7 @@ export default function ProfilePage() {
     return () => {
       mounted = false;
     };
-  }, [router, loadProfile, loadProperties, userSession.sessionId, userSession.userId]);
+  }, [router, loadProfile, loadProperties, loadMessages, userSession.sessionId, userSession.userId]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -265,28 +301,38 @@ export default function ProfilePage() {
            transition={{ ...motionTokens.spring.gentle }}
            className="rounded-3xl border border-border-subtle bg-card shadow-md"
         >
-          <div className="flex items-center gap-1 p-2">
-            <button
-              onClick={() => setTab('profile')}
-              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
-                tab === 'profile'
-                   ? 'bg-brand-olive text-white'
-                   : 'text-content-secondary hover:text-content-primary'
-              }`}
-            >
-              Información Personal
-            </button>
-            <button
-              onClick={() => setTab('listings')}
-              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
-                tab === 'listings'
-                   ? 'bg-brand-olive text-white'
-                   : 'text-content-secondary hover:text-content-primary'
-              }`}
-            >
-              Mis Publicaciones
-            </button>
-          </div>
+           <div className="flex items-center gap-1 p-2">
+             <button
+               onClick={() => setTab('profile')}
+               className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                 tab === 'profile'
+                    ? 'bg-brand-olive text-white'
+                    : 'text-content-secondary hover:text-content-primary'
+               }`}
+             >
+               Información Personal
+             </button>
+             <button
+               onClick={() => setTab('listings')}
+               className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                 tab === 'listings'
+                    ? 'bg-brand-olive text-white'
+                    : 'text-content-secondary hover:text-content-primary'
+               }`}
+             >
+               Mis Publicaciones
+             </button>
+             <button
+               onClick={() => setTab('messages')}
+               className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                 tab === 'messages'
+                    ? 'bg-brand-olive text-white'
+                    : 'text-content-secondary hover:text-content-primary'
+               }`}
+             >
+               Mensajes
+             </button>
+           </div>
 
           <div className="p-6">
             {error && (
@@ -467,6 +513,45 @@ export default function ProfilePage() {
                             </div>
                           </div>
                         </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {tab === 'messages' && (
+                <motion.div
+                  key="messages"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {messages.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-content-secondary">
+                      Todavía no recibiste mensajes por tus publicaciones.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className="rounded-2xl border border-border-subtle bg-card p-4 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-sm font-semibold text-content-primary">
+                                {msg.senderName} <span className="text-xs text-content-secondary">consultó por</span> {msg.propertyTitle}
+                              </p>
+                              <p className="mt-1 text-xs text-content-secondary">{msg.message}</p>
+                              <div className="mt-2 flex flex-wrap gap-3 text-xs text-content-secondary">
+                                <span>📧 {msg.senderEmail}</span>
+                                {msg.senderPhone && <span>📞 {msg.senderPhone}</span>}
+                              </div>
+                            </div>
+                            <span className="text-xs text-content-secondary">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
