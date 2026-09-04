@@ -66,12 +66,27 @@ export async function GET(
     if (!USE_MOCK && property.publisherId) {
       const publisher = await prisma.publisherProfile.findUnique({
         where: { id: property.publisherId },
+        select: { id: true, userId: true, phone: true },
+      });
+
+      if (!publisher) {
+        const fallbackPublisher = await prisma.publisherProfile.findFirst({
+          where: { userId: property.publisherId },
+          select: { id: true, userId: true, phone: true },
+        });
+        if (fallbackPublisher) {
+          property.publisherId = fallbackPublisher.id;
+        }
+      }
+
+      const targetPublisher = publisher ?? await prisma.publisherProfile.findUnique({
+        where: { id: property.publisherId },
         select: { userId: true, phone: true },
       });
 
-      const user = publisher?.userId
+      const user = targetPublisher?.userId
         ? await prisma.user.findUnique({
-            where: { id: publisher.userId },
+            where: { id: targetPublisher.userId },
             select: { email: true, profile: true },
           })
         : null;
@@ -79,7 +94,7 @@ export async function GET(
       const profile = (user?.profile as Record<string, unknown> | null) ?? null;
       const name = typeof profile?.name === 'string' ? profile.name : null;
       const email = typeof user?.email === 'string' ? user.email : null;
-      const publisherPhone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;
+      const publisherPhone = typeof targetPublisher?.phone === 'string' && targetPublisher.phone.trim() ? targetPublisher.phone.trim() : null;
       const profilePhone = typeof profile?.phone === 'string' && profile.phone.trim() ? profile.phone.trim() : null;
       const phone = publisherPhone || profilePhone;
       const whatsapp = phone;
@@ -87,7 +102,7 @@ export async function GET(
       console.log('[Property contactInfo]', {
         propertyId: property.id,
         publisherId: property.publisherId,
-        publisherUserId: publisher?.userId,
+        publisherUserId: targetPublisher?.userId,
         name,
         email,
         phone,
@@ -155,12 +170,14 @@ async function PUT_impl(
       return errorResponse('NOT_FOUND', 'Property not found', 404);
     }
 
-    const publisher = await prisma.publisherProfile.findUnique({
-      where: { userId: session.user.id },
-      select: { id: true },
-    });
+    const publisher = existing.publisherId
+      ? await prisma.publisherProfile.findUnique({
+          where: { id: existing.publisherId },
+          select: { userId: true },
+        })
+      : null;
 
-    if (!publisher || publisher.id !== existing.publisherId) {
+    if (!publisher || publisher.userId !== session.user.id) {
       return errorResponse('FORBIDDEN', 'No autorizado', 403);
     }
 
