@@ -147,14 +147,25 @@ function PropertiesPageInner() {
             swipeQueue: items.slice(1),
           });
         }
+        console.log('[PropertiesPage] search contactInfo sample', items.slice(0, 3).map((p: Property) => ({ id: p.id, contactInfo: p.contactInfo })));
       } else {
         const result = await response.json().catch(() => ({}));
-        setSearchError(result.error?.message || 'Error al buscar propiedades');
+        const apiError = (result as Record<string, unknown>).error;
+        const message =
+          apiError &&
+          typeof apiError === 'object' &&
+          apiError !== null &&
+          'message' in apiError &&
+          typeof (apiError as Record<string, unknown>).message === 'string'
+            ? (apiError as Record<string, unknown>).message
+            : 'Error al buscar propiedades';
+        setSearchError(String(message));
       }
-     } catch {
+     } catch (error) {
+       console.error('searchProperties error', error);
      } finally {
-      setLoading(false);
-    }
+       setLoading(false);
+     }
   }, [localFilter, viewMode]);
 
   useEffect(() => {
@@ -255,20 +266,22 @@ function PropertiesPageInner() {
     }
   }, [viewMode, filteredProperties]);
 
-  const activeFilterCount = [
-    localFilter.listingType,
-    localFilter.listingSubType,
-    localFilter.propertyTypes?.length ? true : false,
-    localFilter.rooms?.length ? true : false,
-    localFilter.bedrooms?.length ? true : false,
-    localFilter.bathrooms,
-    localFilter.amenities?.length ? true : false,
-    localFilter.priceMin || localFilter.priceMax,
-    localFilter.currency,
-    localFilter.creditApproved,
-    localFilter.parking,
-    localFilter.sellerType,
-  ].filter(Boolean).length;
+  const activeFilterCount = useMemo(() => {
+    return [
+      localFilter.listingType,
+      localFilter.listingSubType,
+      localFilter.propertyTypes?.length ? true : false,
+      localFilter.rooms?.length ? true : false,
+      localFilter.bedrooms?.length ? true : false,
+      localFilter.bathrooms,
+      localFilter.amenities?.length ? true : false,
+      localFilter.priceMin || localFilter.priceMax,
+      localFilter.currency,
+      localFilter.creditApproved,
+      localFilter.parking,
+      localFilter.sellerType,
+    ].filter(Boolean).length;
+  }, [localFilter]);
 
   return (
     <div className="min-h-screen bg-app text-content-primary pt-24">
