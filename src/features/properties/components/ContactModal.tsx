@@ -43,36 +43,8 @@ export function ContactModal({ property, isOpen, onClose, isAuthenticated = fals
   }, [isOpen]);
 
   const contact = property.contactInfo;
-
-  const fallbackContact = useMemo(() => {
-    if (contact) return contact;
-    return null;
-  }, [contact]);
-
-  const [fetchedContact, setFetchedContact] = useState<typeof contact>(null);
-
-  useEffect(() => {
-    if (contact || !isOpen) return;
-
-    let cancelled = false;
-    fetch(`/api/properties/${property.id}`)
-      .then((res) => res.json())
-      .then((json) => {
-        if (cancelled) return;
-        setFetchedContact(json?.data?.contactInfo ?? null);
-      })
-      .catch(() => {
-        if (!cancelled) setFetchedContact(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [contact, property.id, isOpen]);
-
-  const activeContact = fallbackContact ?? fetchedContact;
-  const whatsappHref = activeContact?.whatsapp
-    ? `https://wa.me/${activeContact.whatsapp}?text=${encodeURIComponent(formData.message)}`
+  const whatsappHref = contact?.whatsapp
+    ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(formData.message)}`
     : null;
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
