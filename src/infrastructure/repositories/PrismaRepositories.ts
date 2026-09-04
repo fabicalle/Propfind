@@ -45,7 +45,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
       sourceUrl: row.sourceUrl as string | null,
       isActive: (row.isActive as boolean) ?? true,
       createdAt: row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt as string),
-      publisherId: row.publisherId as string | null,
+      publisherId: (row.publisher_id as string | null) ?? null,
     };
   }
 
