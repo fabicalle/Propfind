@@ -78,28 +78,72 @@ async function POST_impl(request: NextRequest) {
     const sessionId = request.headers.get('x-session-id') || undefined;
     const properties = await searchPropertiesUseCase.execute(searchParams, sessionId);
 
-    const feedProperties = properties.map((p) => ({
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      listingType: p.listingType,
-      sellerType: p.sellerType,
-      neighborhood: p.neighborhood,
-      city: p.city,
-      lat: p.lat,
-      lng: p.lng,
-      images: p.images,
-      rooms: p.rooms,
-      bedrooms: p.bedrooms,
-      areaM2: p.areaM2,
-      bathrooms: p.bathrooms,
-      amenities: p.amenities,
-      priceCurrency: p.priceCurrency,
-      creditApproved: p.creditApproved,
-      parking: p.parking,
-      listingSubType: p.listingSubType,
-      description: p.description,
-    }));
+    const publisherIds = Array.from(new Set(properties.map((p) => p.publisherId).filter((id): id is string => Boolean(id))));
+
+    const publishers = publisherIds.length
+      ? await prisma.publisherProfile.findMany({
+          where: { id: { in: publisherIds } },
+          select: { id: true, userId: true, phone: true },
+        })
+      : [];
+
+    const userIds = Array.from(new Set(publishers.map((p) => p.userId).filter((id): id is string => Boolean(id))));
+
+    const users = userIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, email: true, profile: true },
+        })
+      : [];
+
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    const publisherMap = new Map(publishers.map((p) => [p.id, p]));
+
+    const feedProperties = properties.map((p) => {
+      const publisher = publisherMap.get(p.publisherId ?? '');
+      const user = publisher?.userId ? userMap.get(publisher.userId) : null;
+      const profile = (user?.profile as Record<string, unknown> | null) ?? null;
+      const publisherPhone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;
+      const profilePhone = typeof profile?.phone === 'string' && profile.phone.trim() ? profile.phone.trim() : null;
+      const phone = publisherPhone || profilePhone;
+      const name = typeof profile?.name === 'string' ? profile.name : null;
+      const email = typeof user?.email === 'string' ? user.email : null;
+
+      const contactInfo =
+        name || email || phone
+          ? {
+              name: name ?? '',
+              email: email ?? '',
+              phone: phone ?? '',
+              whatsapp: phone ?? '',
+            }
+          : null;
+
+      return {
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        listingType: p.listingType,
+        sellerType: p.sellerType,
+        neighborhood: p.neighborhood,
+        city: p.city,
+        lat: p.lat,
+        lng: p.lng,
+        images: p.images,
+        rooms: p.rooms,
+        bedrooms: p.bedrooms,
+        areaM2: p.areaM2,
+        bathrooms: p.bathrooms,
+        amenities: p.amenities,
+        priceCurrency: p.priceCurrency,
+        creditApproved: p.creditApproved,
+        parking: p.parking,
+        listingSubType: p.listingSubType,
+        description: p.description,
+        publisherId: p.publisherId,
+        contactInfo,
+      };
+    });
 
     return successResponse({ properties: feedProperties, limit, offset });
   } catch (error) {
