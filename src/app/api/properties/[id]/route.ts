@@ -130,15 +130,28 @@ export async function GET(
       contactInfo,
     });
 
-    return successResponse({
-      ...property,
-      price: toNumber(property.price) ?? 0,
-      areaM2: toNumber(property.areaM2),
-      totalMonthlyCost: toNumber(property.totalMonthlyCost),
-      images: property.images as Array<{ url: string; width: number; height: number; alt?: string }>,
-      amenities: property.amenities as string[],
-      contactInfo,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          ...property,
+          price: toNumber(property.price) ?? 0,
+          areaM2: toNumber(property.areaM2),
+          totalMonthlyCost: toNumber(property.totalMonthlyCost),
+          images: property.images as Array<{ url: string; width: number; height: number; alt?: string }>,
+          amenities: property.amenities as string[],
+          contactInfo,
+        },
+      },
+      {
+        status: 200,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error) {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch property');
   }

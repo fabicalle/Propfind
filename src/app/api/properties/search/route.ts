@@ -7,6 +7,7 @@ import { BoundingBox, PropertySearchFilters, SearchParams } from '@/domain/value
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
+import { prisma } from '@/lib/prisma';
 
 const USE_MOCK = process.env.USE_MOCK_DATA === 'true';
 
