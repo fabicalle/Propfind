@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
+import { withCsrf } from '@/lib/security/withCsrf';
+import { withRateLimit } from '@/lib/rateLimit';
 import { sendContactNotification } from '@/lib/notifications/email';
 
-export async function POST(request: NextRequest) {
+async function POST_impl(request: NextRequest) {
   const originError = rejectInvalidOrigin(request);
   if (originError) return originError;
 
@@ -98,3 +100,5 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }
 }
+
+export const POST = withRateLimit(withCsrf(POST_impl));

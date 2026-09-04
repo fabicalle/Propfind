@@ -7,6 +7,7 @@ import { BoundingBox, PropertySearchFilters, SearchParams } from '@/domain/value
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
+import { getSessionFromRequest } from '@/lib/supabase/session';
 import { prisma } from '@/lib/prisma';
 
 const USE_MOCK = process.env.USE_MOCK_DATA === 'true';
@@ -117,6 +118,9 @@ async function POST_impl(request: NextRequest) {
     const publisherMap = new Map(publishers.map((p) => [p.id, p]));
     const publisherByUserMap = new Map(publishers.map((p) => [p.userId, p]));
 
+    const session = await getSessionFromRequest(request);
+    const isAuthenticated = Boolean(session?.user?.id);
+
     const feedProperties = properties.map((p) => {
       const publisher = publisherMap.get(p.publisherId ?? '') || publisherByUserMap.get(p.publisherId ?? '') || null;
       const user = publisher?.userId ? userMap.get(publisher.userId) : null;
@@ -137,41 +141,43 @@ async function POST_impl(request: NextRequest) {
             }
           : null;
 
-    console.log('[Search contactInfo debug]', {
-      propertyId: p.id,
-      publisherId: p.publisherId,
-      matchedPublisher: publisher?.id ?? null,
-      publisherUserId: publisher?.userId ?? null,
-      publisherPhone: publisher?.phone ?? null,
-      profilePhone: profilePhone,
-      contactInfo,
-    });
+      const safeContactInfo = isAuthenticated && contactInfo ? { name: contactInfo.name } : null;
 
-    return {
-      id: p.id,
-      title: p.title,
-      price: p.price,
-      listingType: p.listingType,
-      sellerType: p.sellerType,
-      neighborhood: p.neighborhood,
-      city: p.city,
-      lat: p.lat,
-      lng: p.lng,
-      images: p.images,
-      rooms: p.rooms,
-      bedrooms: p.bedrooms,
-      areaM2: p.areaM2,
-      bathrooms: p.bathrooms,
-      amenities: p.amenities,
-      priceCurrency: p.priceCurrency,
-      creditApproved: p.creditApproved,
-      parking: p.parking,
-      listingSubType: p.listingSubType,
-      description: p.description,
-      publisherId: p.publisherId,
-      contactInfo,
-    };
-  });
+      console.log('[Search contactInfo debug]', {
+        propertyId: p.id,
+        publisherId: p.publisherId,
+        matchedPublisher: publisher?.id ?? null,
+        publisherUserId: publisher?.userId ?? null,
+        publisherPhone: publisher?.phone ?? null,
+        profilePhone: profilePhone,
+        contactInfo,
+      });
+
+      return {
+        id: p.id,
+        title: p.title,
+        price: p.price,
+        listingType: p.listingType,
+        sellerType: p.sellerType,
+        neighborhood: p.neighborhood,
+        city: p.city,
+        lat: p.lat,
+        lng: p.lng,
+        images: p.images,
+        rooms: p.rooms,
+        bedrooms: p.bedrooms,
+        areaM2: p.areaM2,
+        bathrooms: p.bathrooms,
+        amenities: p.amenities,
+        priceCurrency: p.priceCurrency,
+        creditApproved: p.creditApproved,
+        parking: p.parking,
+        listingSubType: p.listingSubType,
+        description: p.description,
+        publisherId: p.publisherId,
+        contactInfo: safeContactInfo,
+      };
+    });
 
     return successResponse({ properties: feedProperties, limit, offset });
   } catch (error) {

@@ -144,21 +144,45 @@ export class PrismaPropertyRepository implements PropertyRepository {
 
     const whereClause = whereConditions.join(' AND ');
 
-    const rows = (await prisma.$queryRawUnsafe<Record<string, unknown>[]>(
-      `
-       SELECT
-         p.id, p.title, p.description, p.price, p.area_m2, p.rooms, p.bedrooms, p.bathrooms,
-         p.property_type, p.listing_type, p.listing_sub_type, p.seller_type, p.price_currency, p.credit_approved, p.parking,
-         p.lat, p.lng, p.address, p.neighborhood, p.city, p.images, p.amenities, p.source_url, p.is_active, p.created_at, p.publisher_id
+    const rows = (await prisma.$queryRaw<
+      Array<{
+        id: string;
+        title: string;
+        description: string | null;
+        price: unknown;
+        area_m2: unknown;
+        rooms: number | null;
+        bedrooms: number | null;
+        bathrooms: number | null;
+        property_type: string | null;
+        listing_type: unknown;
+        listing_sub_type: string | null;
+        seller_type: unknown;
+        price_currency: string | null;
+        credit_approved: boolean | null;
+        parking: string | null;
+        lat: number;
+        lng: number;
+        address: string | null;
+        neighborhood: string | null;
+        city: string | null;
+        images: unknown;
+        amenities: unknown;
+        source_url: string | null;
+        is_active: boolean;
+        created_at: unknown;
+        publisher_id: string | null;
+      }>
+    >`
+      SELECT
+        p.id, p.title, p.description, p.price, p.area_m2, p.rooms, p.bedrooms, p.bathrooms,
+        p.property_type, p.listing_type, p.listing_sub_type, p.seller_type, p.price_currency, p.credit_approved, p.parking,
+        p.lat, p.lng, p.address, p.neighborhood, p.city, p.images, p.amenities, p.source_url, p.is_active, p.created_at, p.publisher_id
       FROM properties p
       WHERE ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
-      `,
-      ...queryParams,
-      limit,
-      offset
-    ));
+    `, ...queryParams, limit, offset));
 
     return rows.map((row) => this.toProperty(row));
   }
