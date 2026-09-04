@@ -79,7 +79,9 @@ export async function GET(
       const profile = (user?.profile as Record<string, unknown> | null) ?? null;
       const name = typeof profile?.name === 'string' ? profile.name : null;
       const email = typeof user?.email === 'string' ? user.email : null;
-      const phone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;
+      const publisherPhone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;
+      const profilePhone = typeof profile?.phone === 'string' && profile.phone.trim() ? profile.phone.trim() : null;
+      const phone = publisherPhone || profilePhone;
       const whatsapp = phone;
 
       console.log('[Property contactInfo]', {
