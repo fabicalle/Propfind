@@ -60,11 +60,12 @@ export default function ProfilePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [messagePage, setMessagePage] = useState(1);
   const [messagePagination, setMessagePagination] = useState<{ page: number; pageSize: number; total: number; totalPages: number } | null>(null);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePropertyId, setDeletePropertyId] = useState<string | null>(null);
+  const [messageDeleteIds, setMessageDeleteIds] = useState<string[] | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
   const loadProfile = useCallback(async () => {
@@ -307,6 +308,52 @@ export default function ProfilePage() {
     }
   };
 
+  const toggleMessageSelection = (messageId: string) => {
+    setSelectedMessageIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAllMessages = () => {
+    setSelectedMessageIds((prev) => {
+      if (prev.size === messages.length) {
+        return new Set();
+      }
+      return new Set(messages.map((m) => m.id));
+    });
+  };
+
+  const handleDeleteSelectedMessages = async () => {
+    if (!messageDeleteIds || messageDeleteIds.length === 0) return;
+    try {
+      const supabase = createSupabaseClient();
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      await Promise.all(
+        messageDeleteIds.map((id) =>
+          fetch(`/api/user/messages/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          })
+        )
+      );
+
+      setMessages((prev) => prev.filter((m) => !messageDeleteIds.includes(m.id)));
+      setSelectedMessageIds(new Set());
+      setMessageDeleteIds(null);
+    } catch {
+      // ignore
+    }
+  };
+
   if (loading) {
     return (
        <div className="flex min-h-screen items-center justify-center bg-app">
@@ -528,7 +575,7 @@ export default function ProfilePage() {
                               </motion.button>
                               <motion.button
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => setDeleteConfirmId(property.id)}
+                                onClick={() => setDeletePropertyId(property.id)}
                                  className="flex items-center gap-1 rounded-lg border border-border-subtle px-3 py-1.5 text-xs font-medium text-brand-clay transition-colors hover:bg-brand-clay/10"
                               >
                                 🗑️ Eliminar
@@ -542,7 +589,7 @@ export default function ProfilePage() {
                 </motion.div>
               )}
 
-              {tab === 'messages' && (
+{tab === 'messages' && (
                 <motion.div
                   key="messages"
                   initial={{ opacity: 0, y: 8 }}
@@ -556,6 +603,27 @@ export default function ProfilePage() {
                     </p>
                   ) : (
                     <>
+                      <div className="mb-3 flex items-center justify-between rounded-2xl border border-border-subtle bg-card p-3 shadow-sm">
+                        <label className="flex cursor-pointer items-center gap-2 text-sm text-content-primary">
+                          <input
+                            type="checkbox"
+                            checked={selectedMessageIds.size === messages.length && messages.length > 0}
+                            onChange={toggleSelectAllMessages}
+                            className="h-4 w-4 cursor-pointer rounded border-border-subtle text-brand-terracotta focus:ring-brand-terracotta"
+                          />
+                          <span className="font-medium">Seleccionar todos</span>
+                        </label>
+                        {selectedMessageIds.size > 0 && (
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setMessageDeleteIds(Array.from(selectedMessageIds))}
+                            className="rounded-lg border border-red-200 bg-card px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                          >
+                            Eliminar seleccionados ({selectedMessageIds.size})
+                          </motion.button>
+                        )}
+                      </div>
+
                       <div className="space-y-3">
                         {messages.map((msg) => (
                           <div
@@ -566,10 +634,16 @@ export default function ProfilePage() {
                                 : 'border-brand-terracotta/30 bg-brand-terracotta/5'
                             }`}
                           >
-                            <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedMessageIds.has(msg.id)}
+                                onChange={() => toggleMessageSelection(msg.id)}
+                                className="mt-1 h-4 w-4 cursor-pointer rounded border-border-subtle text-brand-terracotta focus:ring-brand-terracotta"
+                              />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
-                                  <p className={`text-sm font-semibold ${msg.read ? 'text-content-primary' : 'text-content-primary'}`}>
+                                  <p className="text-sm font-semibold text-content-primary">
                                     {msg.senderName}
                                   </p>
                                   {!msg.read && (
@@ -600,7 +674,7 @@ export default function ProfilePage() {
                                   )}
                                   <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    onClick={() => setDeleteConfirmId(msg.id)}
+                                    onClick={() => setMessageDeleteIds([msg.id])}
                                     className="rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
                                   >
                                     Eliminar
@@ -638,58 +712,69 @@ export default function ProfilePage() {
                 </motion.div>
               )}
             </AnimatePresence>
-             {deleteConfirmId && (
-               <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
-                 <p className="text-sm text-red-700">¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.</p>
-                 <div className="mt-3 flex justify-end gap-2">
-                   <button
-                      onClick={() => {
-                        setDeleteConfirmId(null);
-                        setDeleteConfirmText('');
+            {messageDeleteIds && messageDeleteIds.length > 0 && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full max-w-sm rounded-2xl border border-border-subtle bg-card p-6 shadow-md"
+                >
+                  <h3 className="text-base font-semibold text-content-primary">Confirmar eliminación</h3>
+                  <p className="mt-2 text-sm text-content-secondary">
+                    {messageDeleteIds.length === 1
+                      ? '¿Estás seguro que querés eliminar este mensaje? Esta acción no se puede deshacer.'
+                      : `¿Estás seguro que querés eliminar ${messageDeleteIds.length} mensajes? Esta acción no se puede deshacer.`}
+                  </p>
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button
+                      onClick={() => setMessageDeleteIds(null)}
+                      className="rounded-xl border border-border-subtle bg-card px-4 py-2 text-sm font-medium text-content-primary transition-colors hover:bg-app"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleDeleteSelectedMessages}
+                      className="rounded-xl bg-brand-clay px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-clay/90"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+            {deletePropertyId && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="w-full max-w-sm rounded-2xl border border-border-subtle bg-card p-6 shadow-md"
+                >
+                  <h3 className="text-base font-semibold text-content-primary">Confirmar eliminación</h3>
+                  <p className="mt-2 text-sm text-content-secondary">
+                    ¿Estás seguro de que querés eliminar esta publicación? Esta acción no se puede deshacer.
+                  </p>
+                  <div className="mt-5 flex justify-end gap-2">
+                    <button
+                      onClick={() => setDeletePropertyId(null)}
+                      className="rounded-xl border border-border-subtle bg-card px-4 py-2 text-sm font-medium text-content-primary transition-colors hover:bg-app"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        const id = deletePropertyId;
+                        setDeletePropertyId(null);
+                        await handleDelete(id);
                       }}
-                      className="rounded-lg border border-border-subtle bg-card px-4 py-2 text-xs font-medium text-content-primary transition-colors hover:bg-app"
-                   >
-                     Cancelar
-                   </button>
-                   <button
-                     onClick={async () => {
-                       if (deleteConfirmText !== 'ELIMINAR') return;
-                       const supabase = createSupabaseClient();
-                       if (!supabase) return;
-                       const { data: { session } } = await supabase.auth.getSession();
-                       if (!session?.access_token) return;
-
-                       const isMessage = messages.some((m) => m.id === deleteConfirmId);
-                       if (isMessage) {
-                         await fetch(`/api/user/messages/${deleteConfirmId}`, {
-                           method: 'DELETE',
-                           headers: { Authorization: `Bearer ${session.access_token}` },
-                         });
-                         setMessages((prev) => prev.filter((m) => m.id !== deleteConfirmId));
-                       } else {
-                         await handleDelete(deleteConfirmId);
-                       }
-                       setDeleteConfirmId(null);
-                       setDeleteConfirmText('');
-                     }}
-                     disabled={deleteConfirmText !== 'ELIMINAR'}
-                     className="rounded-lg bg-brand-clay px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-clay/90 disabled:opacity-50"
-                   >
-                     Confirmar eliminación
-                   </button>
-                 </div>
-                 <div className="mt-3">
-                   <input
-                     type="text"
-                     value={deleteConfirmText}
-                     onChange={(e) => setDeleteConfirmText(e.target.value)}
-                     placeholder="Escribí ELIMINAR para confirmar"
-                      className="w-full rounded-lg border border-border-subtle bg-card px-3 py-2 text-xs text-content-primary placeholder:text-content-secondary focus:border-brand-terracotta focus:outline-none focus:ring-1 focus:ring-brand-terracotta"
-                   />
-                 </div>
-               </div>
-             )}
-          </div>
+                      className="rounded-xl bg-brand-clay px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-clay/90"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+           </div>
         </motion.div>
       </div>
     </div>

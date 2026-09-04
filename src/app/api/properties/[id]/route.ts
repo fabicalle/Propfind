@@ -61,6 +61,35 @@ export async function GET(
       return value.toNumber();
     };
 
+    let contactInfo = null;
+
+    if (!USE_MOCK && property.publisherId) {
+      const publisher = await prisma.publisherProfile.findUnique({
+        where: { id: property.publisherId },
+        select: { phone: true, user: { select: { email: true, profile: true } } },
+      });
+
+      const user = publisher?.user ?? null;
+      const profile = (user?.profile as Record<string, unknown> | null) ?? null;
+      const name = typeof profile?.name === 'string' ? profile.name : (publisher?.companyName ?? null);
+      const email = typeof user?.email === 'string' ? user.email : null;
+      const phone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;
+      const whatsapp = phone;
+
+      if (name || email || phone) {
+        contactInfo = {
+          name: name ?? '',
+          email: email ?? '',
+          phone: phone ?? '',
+          whatsapp: whatsapp ?? '',
+        };
+      }
+    } else if (USE_MOCK) {
+      const mockRepo = new MockPropertyRepository();
+      const mockProperty = await mockRepo.findById(id);
+      contactInfo = mockProperty?.contactInfo ?? null;
+    }
+
     return successResponse({
       ...property,
       price: toNumber(property.price) ?? 0,
@@ -68,6 +97,7 @@ export async function GET(
       totalMonthlyCost: toNumber(property.totalMonthlyCost),
       images: property.images as Array<{ url: string; width: number; height: number; alt?: string }>,
       amenities: property.amenities as string[],
+      contactInfo,
     });
   } catch (error) {
     return errorResponse('INTERNAL_ERROR', 'Failed to fetch property');
