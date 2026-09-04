@@ -30,7 +30,14 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Propiedad no encontrada' } }, { status: 404 });
     }
 
-    if (property.publisherId !== session.user.id) {
+    const publisher = property.publisherId
+      ? await prisma.publisherProfile.findUnique({
+          where: { id: property.publisherId },
+          select: { userId: true },
+        })
+      : null;
+
+    if (!publisher || publisher.userId !== session.user.id) {
       return NextResponse.json({ success: false, error: { code: 'FORBIDDEN', message: 'No tenés permiso para eliminar esta propiedad' } }, { status: 403 });
     }
 
