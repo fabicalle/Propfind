@@ -1,0 +1,2 @@
+-- No-op migration: geog column remains in DB for PostGIS, but is excluded from Prisma schema
+-- Raw SQL queries in backend handle geography operations
