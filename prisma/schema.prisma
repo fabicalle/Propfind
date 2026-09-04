@@ -244,6 +244,7 @@ model ContactMessage {
   message       String    @db.Text
   recipientId   String?   @map("recipient_id")
   status        String    @default("new") @map("status")
+  read          Boolean   @default(false) @map("read")
   createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
 

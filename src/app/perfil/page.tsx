@@ -36,6 +36,7 @@ interface Message {
   senderPhone: string | null;
   message: string;
   status: string;
+  read: boolean;
   createdAt: string;
 }
 
@@ -57,6 +58,8 @@ export default function ProfilePage() {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [messagePage, setMessagePage] = useState(1);
+  const [messagePagination, setMessagePagination] = useState<{ page: number; pageSize: number; total: number; totalPages: number } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -131,7 +134,7 @@ export default function ProfilePage() {
     }
   }, []);
 
-  const loadMessages = useCallback(async () => {
+  const loadMessages = useCallback(async (page = 1) => {
     try {
       const supabase = createSupabaseClient();
       if (!supabase) return;
@@ -139,7 +142,7 @@ export default function ProfilePage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
 
-      const res = await fetch('/api/user/messages', {
+      const res = await fetch(`/api/user/messages?page=${page}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
 
@@ -148,6 +151,8 @@ export default function ProfilePage() {
       if (res.ok) {
         const items = result.data?.messages || result.messages || [];
         setMessages(items);
+        setMessagePagination(result.data?.pagination || null);
+        setMessagePage(page);
       }
     } catch {
     }
@@ -202,7 +207,7 @@ export default function ProfilePage() {
         setLoading(true);
         loadProfile();
         loadProperties();
-        loadMessages();
+        loadMessages(1);
       }
     };
 
@@ -281,6 +286,24 @@ export default function ProfilePage() {
       // ignore
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleMarkAsRead = async (messageId: string) => {
+    try {
+      const supabase = createSupabaseClient();
+      if (!supabase) return;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      await fetch(`/api/user/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+
+      setMessages((prev) => prev.map((m) => m.id === messageId ? { ...m, read: true } : m));
+    } catch {
+      // ignore
     }
   };
 
@@ -532,69 +555,140 @@ export default function ProfilePage() {
                       Todavía no recibiste mensajes por tus publicaciones.
                     </p>
                   ) : (
-                    <div className="space-y-3">
-                      {messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className="rounded-2xl border border-border-subtle bg-card p-4 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="text-sm font-semibold text-content-primary">
-                                {msg.senderName} <span className="text-xs text-content-secondary">consultó por</span> {msg.propertyTitle}
-                              </p>
-                              <p className="mt-1 text-xs text-content-secondary">{msg.message}</p>
-                              <div className="mt-2 flex flex-wrap gap-3 text-xs text-content-secondary">
-                                <span>📧 {msg.senderEmail}</span>
-                                {msg.senderPhone && <span>📞 {msg.senderPhone}</span>}
+                    <>
+                      <div className="space-y-3">
+                        {messages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`rounded-2xl border p-4 shadow-sm ${
+                              msg.read
+                                ? 'border-border-subtle bg-card'
+                                : 'border-brand-terracotta/30 bg-brand-terracotta/5'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className={`text-sm font-semibold ${msg.read ? 'text-content-primary' : 'text-content-primary'}`}>
+                                    {msg.senderName}
+                                  </p>
+                                  {!msg.read && (
+                                    <span className="rounded-full bg-brand-terracotta px-2 py-0.5 text-xs font-semibold text-white">
+                                      Nuevo
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-content-secondary">consultó por</span>
+                                  <span className="text-sm font-medium text-content-primary">{msg.propertyTitle}</span>
+                                </div>
+                                <p className="mt-1 text-sm text-content-secondary">{msg.message}</p>
+                                <div className="mt-2 flex flex-wrap gap-3 text-xs text-content-secondary">
+                                  <span>📧 {msg.senderEmail}</span>
+                                  {msg.senderPhone && <span>📞 {msg.senderPhone}</span>}
+                                </div>
+                              </div>
+                              <div className="ml-4 flex flex-col items-end gap-2">
+                                <span className="text-xs text-content-secondary">{new Date(msg.createdAt).toLocaleDateString()}</span>
+                                <div className="flex gap-2">
+                                  {!msg.read && (
+                                    <motion.button
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => handleMarkAsRead(msg.id)}
+                                      className="rounded-lg border border-border-subtle px-2 py-1 text-xs font-medium text-content-primary transition-colors hover:bg-app"
+                                    >
+                                      Marcar leído
+                                    </motion.button>
+                                  )}
+                                  <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => setDeleteConfirmId(msg.id)}
+                                    className="rounded-lg border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                                  >
+                                    Eliminar
+                                  </motion.button>
+                                </div>
                               </div>
                             </div>
-                            <span className="text-xs text-content-secondary">{new Date(msg.createdAt).toLocaleDateString()}</span>
                           </div>
+                        ))}
+                      </div>
+
+                      {messagePagination && messagePagination.totalPages > 1 && (
+                        <div className="mt-6 flex items-center justify-between">
+                          <button
+                            disabled={messagePage <= 1}
+                            onClick={() => loadMessages(messagePage - 1)}
+                            className="rounded-xl border border-border-subtle bg-card px-4 py-2 text-sm font-medium text-content-primary transition-colors hover:bg-app disabled:opacity-50"
+                          >
+                            Anterior
+                          </button>
+                          <span className="text-sm text-content-secondary">
+                            Página {messagePage} de {messagePagination.totalPages}
+                          </span>
+                          <button
+                            disabled={messagePage >= messagePagination.totalPages}
+                            onClick={() => loadMessages(messagePage + 1)}
+                            className="rounded-xl border border-border-subtle bg-card px-4 py-2 text-sm font-medium text-content-primary transition-colors hover:bg-app disabled:opacity-50"
+                          >
+                            Siguiente
+                          </button>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </motion.div>
               )}
             </AnimatePresence>
-            {deleteConfirmId && (
-              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
-                <p className="text-sm text-red-700">¿Estás seguro de que deseas eliminar esta publicación? Esta acción no se puede deshacer.</p>
-                <div className="mt-3 flex justify-end gap-2">
-                  <button
-                     onClick={() => {
+             {deleteConfirmId && (
+               <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4">
+                 <p className="text-sm text-red-700">¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.</p>
+                 <div className="mt-3 flex justify-end gap-2">
+                   <button
+                      onClick={() => {
+                        setDeleteConfirmId(null);
+                        setDeleteConfirmText('');
+                      }}
+                      className="rounded-lg border border-border-subtle bg-card px-4 py-2 text-xs font-medium text-content-primary transition-colors hover:bg-app"
+                   >
+                     Cancelar
+                   </button>
+                   <button
+                     onClick={async () => {
+                       if (deleteConfirmText !== 'ELIMINAR') return;
+                       const supabase = createSupabaseClient();
+                       if (!supabase) return;
+                       const { data: { session } } = await supabase.auth.getSession();
+                       if (!session?.access_token) return;
+
+                       const isMessage = messages.some((m) => m.id === deleteConfirmId);
+                       if (isMessage) {
+                         await fetch(`/api/user/messages/${deleteConfirmId}`, {
+                           method: 'DELETE',
+                           headers: { Authorization: `Bearer ${session.access_token}` },
+                         });
+                         setMessages((prev) => prev.filter((m) => m.id !== deleteConfirmId));
+                       } else {
+                         await handleDelete(deleteConfirmId);
+                       }
                        setDeleteConfirmId(null);
                        setDeleteConfirmText('');
                      }}
-                     className="rounded-lg border border-border-subtle bg-card px-4 py-2 text-xs font-medium text-content-primary transition-colors hover:bg-app"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (deleteConfirmText !== 'ELIMINAR') return;
-                      await handleDelete(deleteConfirmId);
-                      setDeleteConfirmId(null);
-                      setDeleteConfirmText('');
-                    }}
                      disabled={deleteConfirmText !== 'ELIMINAR'}
                      className="rounded-lg bg-brand-clay px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-clay/90 disabled:opacity-50"
-                  >
-                    Confirmar eliminación
-                  </button>
-                </div>
-                <div className="mt-3">
-                  <input
-                    type="text"
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder="Escribí ELIMINAR para confirmar"
-                     className="w-full rounded-lg border border-border-subtle bg-card px-3 py-2 text-xs text-content-primary placeholder:text-content-secondary focus:border-brand-terracotta focus:outline-none focus:ring-1 focus:ring-brand-terracotta"
-                  />
-                </div>
-              </div>
-            )}
+                   >
+                     Confirmar eliminación
+                   </button>
+                 </div>
+                 <div className="mt-3">
+                   <input
+                     type="text"
+                     value={deleteConfirmText}
+                     onChange={(e) => setDeleteConfirmText(e.target.value)}
+                     placeholder="Escribí ELIMINAR para confirmar"
+                      className="w-full rounded-lg border border-border-subtle bg-card px-3 py-2 text-xs text-content-primary placeholder:text-content-secondary focus:border-brand-terracotta focus:outline-none focus:ring-1 focus:ring-brand-terracotta"
+                   />
+                 </div>
+               </div>
+             )}
           </div>
         </motion.div>
       </div>

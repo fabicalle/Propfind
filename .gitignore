@@ -37,7 +37,8 @@ yarn-error.log*
 next-env.d.ts
 
 # Prisma
-/prisma/migrations/
+/prisma/dev.db
+/prisma/*.db
 
 # Supabase
 supabase/.branches

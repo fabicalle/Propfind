@@ -18,28 +18,58 @@ export async function GET(request: NextRequest) {
       select: { email: true },
     });
 
-    const messages = await prisma.contactMessage.findMany({
-      where: {
-        OR: [
-          { recipientId: session.user.id },
-          ...(user?.email ? [{ senderEmail: user.email }] : []),
-        ],
-      },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        propertyId: true,
-        propertyTitle: true,
-        senderName: true,
-        senderEmail: true,
-        senderPhone: true,
-        message: true,
-        status: true,
-        createdAt: true,
+    const page = Math.max(1, Number(request.nextUrl.searchParams.get('page') || '1'));
+    const pageSize = 15;
+    const skip = (page - 1) * pageSize;
+
+    const [messages, total] = await Promise.all([
+      prisma.contactMessage.findMany({
+        where: {
+          OR: [
+            { recipientId: session.user.id },
+            ...(user?.email ? [{ senderEmail: user.email }] : []),
+          ],
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: pageSize,
+        select: {
+          id: true,
+          propertyId: true,
+          propertyTitle: true,
+          senderName: true,
+          senderEmail: true,
+          senderPhone: true,
+          message: true,
+          status: true,
+          read: true,
+          createdAt: true,
+        },
+      }),
+      prisma.contactMessage.count({
+        where: {
+          OR: [
+            { recipientId: session.user.id },
+            ...(user?.email ? [{ senderEmail: user.email }] : []),
+          ],
+        },
+      }),
+    ]);
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        messages,
+        pagination: {
+          page,
+          pageSize,
+          total,
+          totalPages,
+        },
       },
     });
-
-    return NextResponse.json({ success: true, data: { messages } });
   } catch {
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }
