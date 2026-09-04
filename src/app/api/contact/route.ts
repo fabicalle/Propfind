@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, data: contactMessage }, { status: 201 });
-  } catch {
+  } catch (error) {
+    console.error('Contact API error:', error);
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }
 }
