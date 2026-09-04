@@ -66,12 +66,18 @@ export async function GET(
     if (!USE_MOCK && property.publisherId) {
       const publisher = await prisma.publisherProfile.findUnique({
         where: { id: property.publisherId },
-        select: { phone: true, user: { select: { email: true, profile: true } } },
+        select: { userId: true, phone: true },
       });
 
-      const user = publisher?.user ?? null;
+      const user = publisher?.userId
+        ? await prisma.user.findUnique({
+            where: { id: publisher.userId },
+            select: { email: true, profile: true },
+          })
+        : null;
+
       const profile = (user?.profile as Record<string, unknown> | null) ?? null;
-      const name = typeof profile?.name === 'string' ? profile.name : (publisher?.companyName ?? null);
+      const name = typeof profile?.name === 'string' ? profile.name : null;
       const email = typeof user?.email === 'string' ? user.email : null;
       const phone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;
       const whatsapp = phone;
