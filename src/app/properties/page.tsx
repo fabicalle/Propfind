@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { FilterCriteria, Property } from '@/store/useAppStore';
 import { csrfFetch } from '@/lib/security/csrfClient';
 import { useFilterStore } from '@/store/useFilterStore';
@@ -35,7 +35,7 @@ const DEFAULT_FILTER: FilterCriteria = {
 function PropertiesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { activeFilter, setActiveFilter } = useFilterStore();
+  const { setActiveFilter } = useFilterStore();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -66,23 +66,6 @@ function PropertiesPageInner() {
     }
     return DEFAULT_FILTER;
   });
-
-  useEffect(() => {
-    if (activeFilter && Object.keys(activeFilter).length > 0) {
-      setLocalFilter(activeFilter);
-    }
-  }, [activeFilter]);
-
-  useEffect(() => {
-    if (locationQuery) {
-      setHasSearched(true);
-      setLocalFilter({});
-      setActiveFilter({});
-      setLocationValue({ departmentId: null, zoneId: null });
-    } else if (departmentQuery || zoneQuery || provinceQuery) {
-      setHasSearched(true);
-    }
-  }, [locationQuery, departmentQuery, zoneQuery, provinceQuery, setActiveFilter]);
 
   const toggleArrayItem = useCallback(
     (field: 'rooms' | 'bedrooms' | 'propertyTypes' | 'amenities', value: number | string) => {
@@ -147,7 +130,6 @@ function PropertiesPageInner() {
             swipeQueue: items.slice(1),
           });
         }
-        console.log('[PropertiesPage] search contactInfo sample', items.slice(0, 3).map((p: Property) => ({ id: p.id, contactInfo: p.contactInfo })));
       } else {
         const result = await response.json().catch(() => ({}));
         const apiError = (result as Record<string, unknown>).error;
@@ -166,10 +148,13 @@ function PropertiesPageInner() {
      } finally {
        setLoading(false);
      }
-  }, [localFilter, viewMode]);
+  }, [loading, localFilter, viewMode]);
+
+  const searchPropertiesRef = useRef(searchProperties);
+  searchPropertiesRef.current = searchProperties;
 
   useEffect(() => {
-    searchProperties();
+    searchPropertiesRef.current();
   }, [localFilter, viewMode]);
 
   const handleClearSearch = useCallback(() => {
