@@ -137,31 +137,41 @@ async function POST_impl(request: NextRequest) {
             }
           : null;
 
-      return {
-        id: p.id,
-        title: p.title,
-        price: p.price,
-        listingType: p.listingType,
-        sellerType: p.sellerType,
-        neighborhood: p.neighborhood,
-        city: p.city,
-        lat: p.lat,
-        lng: p.lng,
-        images: p.images,
-        rooms: p.rooms,
-        bedrooms: p.bedrooms,
-        areaM2: p.areaM2,
-        bathrooms: p.bathrooms,
-        amenities: p.amenities,
-        priceCurrency: p.priceCurrency,
-        creditApproved: p.creditApproved,
-        parking: p.parking,
-        listingSubType: p.listingSubType,
-        description: p.description,
-        publisherId: p.publisherId,
-        contactInfo,
-      };
+    console.log('[Search contactInfo debug]', {
+      propertyId: p.id,
+      publisherId: p.publisherId,
+      matchedPublisher: publisher?.id ?? null,
+      publisherUserId: publisher?.userId ?? null,
+      publisherPhone: publisher?.phone ?? null,
+      profilePhone: profilePhone,
+      contactInfo,
     });
+
+    return {
+      id: p.id,
+      title: p.title,
+      price: p.price,
+      listingType: p.listingType,
+      sellerType: p.sellerType,
+      neighborhood: p.neighborhood,
+      city: p.city,
+      lat: p.lat,
+      lng: p.lng,
+      images: p.images,
+      rooms: p.rooms,
+      bedrooms: p.bedrooms,
+      areaM2: p.areaM2,
+      bathrooms: p.bathrooms,
+      amenities: p.amenities,
+      priceCurrency: p.priceCurrency,
+      creditApproved: p.creditApproved,
+      parking: p.parking,
+      listingSubType: p.listingSubType,
+      description: p.description,
+      publisherId: p.publisherId,
+      contactInfo,
+    };
+  });
 
     return successResponse({ properties: feedProperties, limit, offset });
   } catch (error) {
