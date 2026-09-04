@@ -70,7 +70,8 @@ export async function GET(request: NextRequest) {
         },
       },
     });
-  } catch {
+  } catch (error) {
+    console.error('Messages API error:', error);
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }
 }
