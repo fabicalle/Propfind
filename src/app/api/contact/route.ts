@@ -36,6 +36,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: { code: 'NOT_FOUND', message: 'Propiedad no encontrada' } }, { status: 404 });
     }
 
+    const publisher = property.publisherId
+      ? await prisma.publisherProfile.findUnique({
+          where: { id: property.publisherId },
+          select: { userId: true, phone: true },
+        })
+      : null;
+
+    const recipientUserId = publisher?.userId || null;
+
     const contactMessage = await prisma.contactMessage.create({
       data: {
         propertyId,
@@ -44,7 +53,7 @@ export async function POST(request: NextRequest) {
         senderEmail: email.trim(),
         senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : null,
         message: message.trim(),
-        recipientId: property.publisherId || null,
+        recipientId: recipientUserId,
       },
       select: {
         id: true,
@@ -60,32 +69,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (property.publisherId) {
-      const publisher = await prisma.publisherProfile.findUnique({
-        where: { id: property.publisherId },
-        select: { phone: true },
+    const user = recipientUserId
+      ? await prisma.user.findUnique({
+          where: { id: recipientUserId },
+          select: { email: true },
+        })
+      : null;
+
+    const recipientEmail = user?.email || null;
+    const recipientPhone = publisher?.phone || null;
+
+    if (recipientEmail) {
+      await sendContactNotification({
+        to: recipientEmail,
+        propertyTitle: propertyTitle.trim(),
+        senderName: name.trim(),
+        senderEmail: email.trim(),
+        senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : undefined,
+        message: message.trim(),
+      }).catch((err) => {
+        console.error('Resend notification error:', err);
       });
-
-      const user = await prisma.user.findUnique({
-        where: { id: property.publisherId },
-        select: { email: true },
-      });
-
-      const recipientEmail = user?.email || null;
-      const recipientPhone = publisher?.phone || null;
-
-      if (recipientEmail) {
-        await sendContactNotification({
-          to: recipientEmail,
-          propertyTitle: propertyTitle.trim(),
-          senderName: name.trim(),
-          senderEmail: email.trim(),
-          senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : undefined,
-          message: message.trim(),
-        }).catch((err) => {
-          console.error('Resend notification error:', err);
-        });
-      }
     }
 
     return NextResponse.json({ success: true, data: contactMessage }, { status: 201 });
