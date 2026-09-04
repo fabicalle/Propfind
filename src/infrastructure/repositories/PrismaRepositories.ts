@@ -144,36 +144,36 @@ export class PrismaPropertyRepository implements PropertyRepository {
 
     const whereClause = whereConditions.join(' AND ');
 
-    const rows = (await prisma.$queryRaw<
-      Array<{
-        id: string;
-        title: string;
-        description: string | null;
-        price: unknown;
-        area_m2: unknown;
-        rooms: number | null;
-        bedrooms: number | null;
-        bathrooms: number | null;
-        property_type: string | null;
-        listing_type: unknown;
-        listing_sub_type: string | null;
-        seller_type: unknown;
-        price_currency: string | null;
-        credit_approved: boolean | null;
-        parking: string | null;
-        lat: number;
-        lng: number;
-        address: string | null;
-        neighborhood: string | null;
-        city: string | null;
-        images: unknown;
-        amenities: unknown;
-        source_url: string | null;
-        is_active: boolean;
-        created_at: unknown;
-        publisher_id: string | null;
-      }>
-    >`
+    interface PropertyRow {
+      id: string;
+      title: string;
+      description: string | null;
+      price: string | number | null;
+      area_m2: string | number | null;
+      rooms: number | null;
+      bedrooms: number | null;
+      bathrooms: number | null;
+      property_type: string | null;
+      listing_type: string | null;
+      listing_sub_type: string | null;
+      seller_type: string | null;
+      price_currency: string | null;
+      credit_approved: boolean | null;
+      parking: string | null;
+      lat: number;
+      lng: number;
+      address: string | null;
+      neighborhood: string | null;
+      city: string | null;
+      images: string | null;
+      amenities: string | null;
+      source_url: string | null;
+      is_active: boolean;
+      created_at: string | Date | null;
+      publisher_id: string | null;
+    }
+
+    const query = `
       SELECT
         p.id, p.title, p.description, p.price, p.area_m2, p.rooms, p.bedrooms, p.bathrooms,
         p.property_type, p.listing_type, p.listing_sub_type, p.seller_type, p.price_currency, p.credit_approved, p.parking,
@@ -182,9 +182,11 @@ export class PrismaPropertyRepository implements PropertyRepository {
       WHERE ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
-    `, ...queryParams, limit, offset));
+    `;
 
-    return rows.map((row) => this.toProperty(row));
+    const rows = await prisma.$queryRawUnsafe<PropertyRow[]>(query, ...queryParams, limit, offset);
+
+    return rows.map((row) => this.toProperty(row as unknown as Record<string, unknown>));
   }
 
   async findById(id: string): Promise<Property | null> {
