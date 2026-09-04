@@ -51,8 +51,6 @@ function PropertiesPageInner() {
 
   const locationQuery = searchParams.get('location')?.toLowerCase() || '';
   const locationDisplay = searchParams.get('location') || '';
-  const departmentQuery = searchParams.get('departamento') || '';
-  const zoneQuery = searchParams.get('zona') || '';
   const provinceQuery = searchParams.get('provincia') || '';
 
   const [localFilter, setLocalFilter] = useState<FilterCriteria>(() => {
@@ -66,19 +64,6 @@ function PropertiesPageInner() {
     }
     return DEFAULT_FILTER;
   });
-
-  const toggleArrayItem = useCallback(
-    (field: 'rooms' | 'bedrooms' | 'propertyTypes' | 'amenities', value: number | string) => {
-      setLocalFilter((prev) => {
-        const current = (prev[field] || []) as (number | string)[];
-        const updated = current.includes(value)
-          ? current.filter((item) => item !== value)
-          : [...current, value];
-        return { ...prev, [field]: updated };
-      });
-    },
-    []
-  );
 
   const searchProperties = useCallback(async () => {
     if (loading) return;
