@@ -64,20 +64,28 @@ async function POST_impl(request: NextRequest) {
 
     const hasPublisherProfile = await prisma.publisherProfile.findUnique({
       where: { userId: validated.userId },
-      select: { id: true },
+      select: { id: true, phone: true },
     });
 
     let publisherId = hasPublisherProfile?.id ?? null;
 
     if (!publisherId) {
-      const profile = await prisma.publisherProfile.create({
+      const user = await prisma.user.findUnique({
+        where: { id: validated.userId },
+        select: { profile: true },
+      });
+
+      const profileData = (user?.profile as Record<string, unknown> | null) ?? null;
+      const phone = typeof profileData?.phone === 'string' && profileData.phone.trim() ? profileData.phone.trim() : undefined;
+
+      const newProfile = await prisma.publisherProfile.create({
         data: {
           userId: validated.userId,
-          phone: undefined,
+          phone,
         },
         select: { id: true },
       });
-      publisherId = profile.id;
+      publisherId = newProfile.id;
     }
 
     const propertyId = await createPropertyUseCase.execute({
