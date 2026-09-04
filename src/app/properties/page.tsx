@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { FilterCriteria, Property } from '@/store/useAppStore';
 import { csrfFetch } from '@/lib/security/csrfClient';
 import { useFilterStore } from '@/store/useFilterStore';
@@ -134,6 +134,13 @@ function PropertiesPageInner() {
        setLoading(false);
      }
   }, [loading, localFilter, viewMode]);
+
+  const searchPropertiesRef = useRef(searchProperties);
+  searchPropertiesRef.current = searchProperties;
+
+  useEffect(() => {
+    searchPropertiesRef.current();
+  }, []);
 
   const handleClearSearch = useCallback(() => {
     router.push('/properties');
