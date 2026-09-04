@@ -88,20 +88,37 @@ async function POST_impl(request: NextRequest) {
         })
       : [];
 
-    const userIds = Array.from(new Set(publishers.map((p) => p.userId).filter((id): id is string => Boolean(id))));
+    const unresolvedPublisherIds = properties
+      .map((p) => p.publisherId)
+      .filter((id): id is string => Boolean(id));
 
-    const users = userIds.length
+    const publisherIdSet = new Set(publishers.map((pub) => pub.id));
+
+    const unresolvedByPublisherId = unresolvedPublisherIds.filter((id) => !publisherIdSet.has(id));
+
+    if (unresolvedByPublisherId.length > 0) {
+      const fallbackPublishers = await prisma.publisherProfile.findMany({
+        where: { userId: { in: unresolvedByPublisherId } },
+        select: { id: true, userId: true, phone: true },
+      });
+      fallbackPublishers.forEach((fp) => publishers.push(fp));
+    }
+
+    const allUserIds = Array.from(new Set(publishers.map((p) => p.userId).filter((id): id is string => Boolean(id))));
+
+    const users = allUserIds.length
       ? await prisma.user.findMany({
-          where: { id: { in: userIds } },
+          where: { id: { in: allUserIds } },
           select: { id: true, email: true, profile: true },
         })
       : [];
 
     const userMap = new Map(users.map((u) => [u.id, u]));
     const publisherMap = new Map(publishers.map((p) => [p.id, p]));
+    const publisherByUserMap = new Map(publishers.map((p) => [p.userId, p]));
 
     const feedProperties = properties.map((p) => {
-      const publisher = publisherMap.get(p.publisherId ?? '');
+      const publisher = publisherMap.get(p.publisherId ?? '') || publisherByUserMap.get(p.publisherId ?? '') || null;
       const user = publisher?.userId ? userMap.get(publisher.userId) : null;
       const profile = (user?.profile as Record<string, unknown> | null) ?? null;
       const publisherPhone = typeof publisher?.phone === 'string' && publisher.phone.trim() ? publisher.phone.trim() : null;

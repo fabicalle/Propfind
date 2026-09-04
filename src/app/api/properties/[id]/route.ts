@@ -99,16 +99,6 @@ export async function GET(
       const phone = publisherPhone || profilePhone;
       const whatsapp = phone;
 
-      console.log('[Property contactInfo]', {
-        propertyId: property.id,
-        publisherId: property.publisherId,
-        publisherUserId: targetPublisher?.userId,
-        name,
-        email,
-        phone,
-        whatsapp,
-      });
-
       if (name || email || phone) {
         contactInfo = {
           name: name ?? '',
@@ -122,13 +112,6 @@ export async function GET(
       const mockProperty = await mockRepo.findById(id);
       contactInfo = mockProperty?.contactInfo ?? null;
     }
-
-    console.log('[Property contactInfo result]', {
-      propertyId: property.id,
-      useMock: USE_MOCK,
-      publisherId: property.publisherId,
-      contactInfo,
-    });
 
     return NextResponse.json(
       {

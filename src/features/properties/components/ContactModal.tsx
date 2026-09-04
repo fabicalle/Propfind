@@ -47,13 +47,6 @@ export function ContactModal({ property, isOpen, onClose, isAuthenticated = fals
     ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(formData.message)}`
     : null;
 
-  const debugContactInfo = contact
-    ? `name=${contact.name ?? ''} | email=${contact.email ?? ''} | phone=${contact.phone ?? ''} | whatsapp=${contact.whatsapp ?? ''}`
-    : 'contactInfo es null';
-
-  console.log('[ContactModal] property contactInfo:', contact);
-  console.log('[ContactModal] whatsappHref:', whatsappHref);
-
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -141,9 +134,6 @@ export function ContactModal({ property, isOpen, onClose, isAuthenticated = fals
 
              {/* Content */}
              <div className="flex-1 overflow-y-auto p-6">
-               <div className="mb-4 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-800">
-                 {debugContactInfo}
-               </div>
               {submitStatus === 'success' ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
