@@ -135,13 +135,6 @@ function PropertiesPageInner() {
      }
   }, [loading, localFilter, viewMode]);
 
-  const searchPropertiesRef = useRef(searchProperties);
-  searchPropertiesRef.current = searchProperties;
-
-  useEffect(() => {
-    searchPropertiesRef.current();
-  }, [localFilter, viewMode]);
-
   const handleClearSearch = useCallback(() => {
     router.push('/properties');
   }, [router]);
