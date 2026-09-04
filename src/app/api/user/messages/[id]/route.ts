@@ -3,7 +3,7 @@ import { getSessionFromRequest } from '@/lib/supabase/session';
 import { prisma } from '@/lib/prisma';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const originError = rejectInvalidOrigin(request);
   if (originError) return originError;
 
@@ -13,7 +13,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'No autorizado' } }, { status: 401 });
     }
 
-    const messageId = params.id;
+    const messageId = (await params).id;
 
     const message = await prisma.contactMessage.findUnique({
       where: { id: messageId },
@@ -40,7 +40,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const originError = rejectInvalidOrigin(request);
   if (originError) return originError;
 
@@ -50,7 +50,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ success: false, error: { code: 'UNAUTHORIZED', message: 'No autorizado' } }, { status: 401 });
     }
 
-    const messageId = params.id;
+    const messageId = (await params).id;
 
     const message = await prisma.contactMessage.findUnique({
       where: { id: messageId },
