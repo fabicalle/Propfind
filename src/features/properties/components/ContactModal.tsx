@@ -47,6 +47,9 @@ export function ContactModal({ property, isOpen, onClose, isAuthenticated = fals
     ? `https://wa.me/${contact.whatsapp}?text=${encodeURIComponent(formData.message)}`
     : null;
 
+  console.log('[ContactModal] property contactInfo:', contact);
+  console.log('[ContactModal] whatsappHref:', whatsappHref);
+
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
