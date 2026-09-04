@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { FilterCriteria, Property } from '@/store/useAppStore';
 import { csrfFetch } from '@/lib/security/csrfClient';
 import { useFilterStore } from '@/store/useFilterStore';
@@ -396,7 +396,7 @@ function PropertiesPageInner() {
            <div className="rounded-2xl border border-dashed border-border-subtle p-12 text-center">
              {locationQuery ? (
                <>
-                 <p className="text-content-primary">No encontramos propiedades que coincidan con "{locationQuery}".</p>
+                  <p className="text-content-primary">No encontramos propiedades que coincidan con ‘{locationQuery}’.</p>
                  <button
                    onClick={handleClearSearch}
                    className="mt-4 rounded-lg bg-brand-olive px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
