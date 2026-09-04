@@ -1,9 +1,19 @@
--- ContactMessages: permitir acceso limitado
+DROP POLICY IF EXISTS contact_messages_recipient_read ON public.contact_messages;
+DROP POLICY IF EXISTS contact_messages_sender_read ON public.contact_messages;
+DROP POLICY IF EXISTS contact_messages_recipient_update ON public.contact_messages;
+DROP POLICY IF EXISTS contact_messages_recipient_delete ON public.contact_messages;
+
 CREATE POLICY contact_messages_recipient_read
   ON public.contact_messages
   FOR SELECT
   TO authenticated
   USING (recipient_id = auth.uid()::text);
+
+CREATE POLICY contact_messages_sender_read
+  ON public.contact_messages
+  FOR SELECT
+  TO authenticated
+  USING (sender_email = (SELECT email FROM auth.users WHERE id = auth.uid()));
 
 CREATE POLICY contact_messages_recipient_update
   ON public.contact_messages
@@ -19,6 +29,5 @@ CREATE POLICY contact_messages_recipient_delete
 
 ALTER TABLE public.contact_messages ENABLE ROW LEVEL SECURITY;
 
--- Spatial ref sys: acceso restringido
 REVOKE SELECT ON public.spatial_ref_sys FROM anon, authenticated;
 GRANT SELECT ON public.spatial_ref_sys TO service_role;
