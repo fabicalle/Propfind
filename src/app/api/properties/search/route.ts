@@ -143,16 +143,6 @@ async function POST_impl(request: NextRequest) {
 
       const safeContactInfo = isAuthenticated && contactInfo ? { name: contactInfo.name } : null;
 
-      console.log('[Search contactInfo debug]', {
-        propertyId: p.id,
-        publisherId: p.publisherId,
-        matchedPublisher: publisher?.id ?? null,
-        publisherUserId: publisher?.userId ?? null,
-        publisherPhone: publisher?.phone ?? null,
-        profilePhone: profilePhone,
-        contactInfo,
-      });
-
       return {
         id: p.id,
         title: p.title,

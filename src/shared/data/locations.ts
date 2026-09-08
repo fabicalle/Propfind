@@ -1,12 +1,25 @@
 export interface LocationZone {
   id: string;
   name: string;
+  bbox?: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  };
 }
 
 export interface LocationDepartment {
   id: string;
   name: string;
   zones: LocationZone[];
+  bbox?: {
+    south: number;
+    west: number;
+    north: number;
+    east: number;
+  };
+  aliases?: string[];
 }
 
 export interface LocationProvince {
@@ -219,6 +232,8 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'godoy-cruz',
         name: 'Godoy Cruz',
+        aliases: ['godoy cruz'],
+        bbox: { south: -32.96, west: -68.90, north: -32.88, east: -68.80 },
         zones: [
           { id: 'palmares', name: 'Palmares' },
           { id: 'bombal-sur', name: 'Barrio Bombal Sur' },
@@ -236,6 +251,8 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital',
         name: 'Ciudad de Mendoza',
+        aliases: ['mendoza', 'ciudad de mendoza'],
+        bbox: { south: -32.93, west: -68.89, north: -32.85, east: -68.79 },
         zones: [
           { id: 'quinta-seccion', name: 'Quinta Sección' },
           { id: 'sexta-seccion', name: 'Sexta Sección' },
@@ -247,6 +264,8 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'lujan-de-cuyo',
         name: 'Luján de Cuyo',
+        aliases: ['lujan de cuyo', 'luján de cuyo'],
+        bbox: { south: -33.05, west: -68.95, north: -32.95, east: -68.80 },
         zones: [
           { id: 'chacras-de-coria', name: 'Chacras de Coria' },
           { id: 'vistalba', name: 'Vistalba' },
@@ -258,6 +277,8 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'guaymallen',
         name: 'Guaymallén',
+        aliases: ['guaymallen'],
+        bbox: { south: -32.93, west: -68.83, north: -32.83, east: -68.73 },
         zones: [
           { id: 'dorrego', name: 'Dorrego' },
           { id: 'villa-nueva', name: 'Villa Nueva' },
@@ -268,6 +289,8 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'maipu',
         name: 'Maipú',
+        aliases: ['maipu'],
+        bbox: { south: -32.98, west: -68.83, north: -32.88, east: -68.73 },
         zones: [
           { id: 'maipu-centro', name: 'Maipú Centro' },
           { id: 'coquimbito', name: 'Coquimbito' },
@@ -278,6 +301,8 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'las-heras',
         name: 'Las Heras',
+        aliases: ['las heras'],
+        bbox: { south: -32.88, west: -68.83, north: -32.78, east: -68.73 },
         zones: [
           { id: 'el-challao', name: 'El Challao' },
           { id: 'las-heras-centro', name: 'Las Heras Centro' },
@@ -530,4 +555,34 @@ export function searchLocations(query: string): LocationIndex[] {
   }
 
   return results;
+}
+
+export function findDepartmentById(departmentId: string): LocationDepartment | undefined {
+  for (const province of LOCATIONS) {
+    const department = province.departments.find((d) => d.id === departmentId);
+    if (department) return department;
+  }
+  return undefined;
+}
+
+export function getProvinceBbox(provinceId: string): { south: number; west: number; north: number; east: number } | undefined {
+  const province = getProvinceById(provinceId);
+  if (!province) return undefined;
+
+  const departments = province.departments.filter((d) => d.bbox);
+  if (departments.length === 0) return undefined;
+
+  let south = departments[0].bbox!.south;
+  let west = departments[0].bbox!.west;
+  let north = departments[0].bbox!.north;
+  let east = departments[0].bbox!.east;
+
+  for (const dept of departments.slice(1)) {
+    south = Math.min(south, dept.bbox!.south);
+    west = Math.min(west, dept.bbox!.west);
+    north = Math.max(north, dept.bbox!.north);
+    east = Math.max(east, dept.bbox!.east);
+  }
+
+  return { south, west, north, east };
 }

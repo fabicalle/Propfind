@@ -34,11 +34,7 @@ export async function getSessionFromRequest(request: NextRequest): Promise<Sessi
         }
       }
     } catch {
-    }
-
-    const decoded = decodeJwt(token);
-    if (decoded?.sub) {
-      return { user: { id: decoded.sub as string } };
+      // Invalid token or verification failed
     }
   }
 

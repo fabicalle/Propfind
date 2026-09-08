@@ -25,12 +25,12 @@ export function useContactButton({ propertyTitle, propertyId }: UseContactButton
   const loadSession = useCallback(async () => {
     const supabase = createSupabaseClient();
     if (!supabase) return null;
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthenticated(!!session);
-    if (session?.user) {
-      setUserId(session.user.id);
+    const { data: { user } } = await supabase.auth.getUser();
+    setIsAuthenticated(!!user);
+    if (user) {
+      setUserId(user.id);
     }
-    return session;
+    return user;
   }, []);
 
   useEffect(() => {
@@ -42,17 +42,16 @@ export function useContactButton({ propertyTitle, propertyId }: UseContactButton
     try {
       const supabase = createSupabaseClient();
       if (!supabase) return;
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       let phone = (user.user_metadata as Record<string, unknown> | null)?.phone as string | null;
       const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || null;
 
-      if (!phone && session?.access_token) {
+      if (!phone && user.id) {
         try {
           const res = await fetch('/api/user/me', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
+            headers: { Authorization: `Bearer ${user.id}` },
           });
           if (res.ok) {
             const data = await res.json();
@@ -111,8 +110,8 @@ export function useContactButton({ propertyTitle, propertyId }: UseContactButton
         return;
       }
 
-      const { data: { session: freshSession } } = await supabase.auth.getSession();
-      const user = freshSession?.user;
+      const { data: { user: freshUser } } = await supabase.auth.getUser();
+      const user = freshUser;
       if (!user) {
         setIsLoading(false);
         return;
@@ -120,10 +119,10 @@ export function useContactButton({ propertyTitle, propertyId }: UseContactButton
 
       let phone = (user.user_metadata as Record<string, unknown> | null)?.phone as string | null;
 
-      if (!phone && freshSession?.access_token) {
+      if (!phone && user.id) {
         try {
           const res = await fetch('/api/user/me', {
-            headers: { Authorization: `Bearer ${freshSession.access_token}` },
+            headers: { Authorization: `Bearer ${user.id}` },
           });
           if (res.ok) {
             const data = await res.json();

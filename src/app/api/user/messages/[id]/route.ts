@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest } from '@/lib/supabase/session';
 import { prisma } from '@/lib/prisma';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
+import { withCsrf } from '@/lib/security/withCsrf';
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function PATCH_impl(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const originError = rejectInvalidOrigin(request);
   if (originError) return originError;
 
@@ -40,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function DELETE_impl(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const originError = rejectInvalidOrigin(request);
   if (originError) return originError;
 
@@ -74,3 +75,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }
 }
+
+export const PATCH = withCsrf(PATCH_impl);
+export const DELETE = withCsrf(DELETE_impl);

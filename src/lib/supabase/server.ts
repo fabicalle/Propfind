@@ -28,8 +28,8 @@ export async function getServerSession(): Promise<Session | null> {
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ? { user } as unknown as Session : null;
 }
 
 export async function getServerSessionFromRequest(request: NextRequest): Promise<Session | null> {
@@ -50,8 +50,8 @@ export async function getServerSessionFromRequest(request: NextRequest): Promise
     }
   );
 
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ? { user } as unknown as Session : null;
 }
 
 export async function createServerSupabaseClient() {

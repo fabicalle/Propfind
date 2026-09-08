@@ -10,16 +10,16 @@ import PropertyDetailModal from '@/components/PropertyDetailModal';
 import { FilterPanel } from '@/components/FilterPanel';
 import { LocationFilter, type LocationFilterValue } from '@/features/properties/components/LocationFilter';
 import { loadFiltersLocally } from '@/lib/persistence/filterPersistence';
-import { getProvinceById, LOCATIONS, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
+import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
 import { motion } from 'framer-motion';
 import { motionTokens } from '@/lib/motion/tokens';
 import { Suspense } from 'react';
 import { useSwipeStore } from '@/store/useSwipeStore';
 import { useFavoritesStore } from '@/store/useFavoritesStore';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useGeoIP } from '@/features/properties/hooks/useGeoIP';
 
 const DEFAULT_FILTER: FilterCriteria = {
-  listingType: 'rent',
   propertyTypes: [],
   rooms: [],
   bedrooms: [],
@@ -36,6 +36,7 @@ function PropertiesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setActiveFilter } = useFilterStore();
+  const { departmentId: geoDepartmentId, departmentName: geoDepartmentName, city: geoCity, region: geoRegion, loading: geoLoading, lat: geoLat, lng: geoLng } = useGeoIP();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -43,15 +44,114 @@ function PropertiesPageInner() {
   const [viewMode, setViewMode] = useState<'grid' | 'swipe'>('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [locationValue, setLocationValue] = useState<LocationFilterValue>({
-    departmentId: null,
-    zoneId: null,
-    provinceId: null,
+  const [locationValue, setLocationValue] = useState<LocationFilterValue>(() => {
+    const departmentParam = searchParams.get('departamento');
+    const zoneParam = searchParams.get('zona');
+    const provinceParam = searchParams.get('provincia');
+
+    if (departmentParam || zoneParam || provinceParam) {
+      let departmentId: string | null = null;
+      let zoneId: string | null = null;
+      let provinceId: string | null = null;
+
+      if (provinceParam) {
+        const foundProvince = LOCATIONS.find(
+          (p) => p.name.toLowerCase() === provinceParam.toLowerCase()
+        );
+        if (foundProvince) provinceId = foundProvince.id;
+      }
+
+      if (departmentParam) {
+        const currentProvinceId = provinceId || 'mendoza';
+        const province = getProvinceById(currentProvinceId);
+        const found = province?.departments.find(
+          (d) => d.name.toLowerCase() === departmentParam.toLowerCase()
+        );
+        if (found) departmentId = found.id;
+      }
+
+      if (departmentId && zoneParam) {
+        const currentProvinceId = provinceId || 'mendoza';
+        const province = getProvinceById(currentProvinceId);
+        const dept = province?.departments.find((d) => d.id === departmentId);
+        const foundZone = dept?.zones.find((z) => z.name.toLowerCase() === zoneParam.toLowerCase());
+        if (foundZone) zoneId = foundZone.id;
+      }
+
+      return { departmentId, zoneId, provinceId };
+    }
+
+    return {
+      departmentId: null,
+      zoneId: null,
+      provinceId: null,
+    };
   });
+
+  useEffect(() => {
+    if (locationValue.departmentId || locationValue.zoneId || locationValue.provinceId) return;
+    if (!geoDepartmentId && !geoRegion) return;
+
+    setLocationValue((current) => {
+      if (current.departmentId || current.zoneId || current.provinceId) return current;
+      const provinceId = geoRegion ? LOCATIONS.find((p) => p.name.toLowerCase() === geoRegion.toLowerCase())?.id ?? null : null;
+      const departmentId = geoDepartmentId && geoDepartmentId !== 'all' ? geoDepartmentId : null;
+      return { departmentId, zoneId: null, provinceId };
+    });
+  }, [geoDepartmentId, geoRegion, locationValue]);
 
   const locationQuery = searchParams.get('location')?.toLowerCase() || '';
   const locationDisplay = searchParams.get('location') || '';
   const provinceQuery = searchParams.get('provincia') || '';
+
+  const getBboxForLocation = useCallback((): { south: number; west: number; north: number; east: number } | undefined => {
+    if (locationValue.zoneId && locationValue.departmentId) {
+      const dept = findDepartmentById(locationValue.departmentId);
+      const zone = dept?.zones.find((z) => z.id === locationValue.zoneId);
+      if (zone?.bbox) return zone.bbox;
+    }
+
+    if (locationValue.departmentId) {
+      const dept = findDepartmentById(locationValue.departmentId);
+      if (dept?.bbox) return dept.bbox;
+    }
+
+    if (locationValue.provinceId) {
+      const provinceBbox = getProvinceBbox(locationValue.provinceId);
+      if (provinceBbox) return provinceBbox;
+    }
+
+    if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId && geoLat != null && geoLng != null) {
+      const radiusKm = 50;
+      const latDelta = radiusKm / 111;
+      const lngDelta = radiusKm / (111 * Math.cos((geoLat * Math.PI) / 180));
+      return {
+        south: geoLat - latDelta,
+        west: geoLng - lngDelta,
+        north: geoLat + latDelta,
+        east: geoLng + lngDelta,
+      };
+    }
+
+    if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId && geoDepartmentId && geoDepartmentId !== 'all') {
+      const dept = findDepartmentById(geoDepartmentId);
+      if (dept?.bbox) return dept.bbox;
+    }
+
+    if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId && geoRegion) {
+      const province = LOCATIONS.find(
+        (p) => p.name.toLowerCase() === geoRegion.toLowerCase()
+      );
+      if (province) {
+        const provinceBbox = getProvinceBbox(province.id);
+        if (provinceBbox) return provinceBbox;
+      }
+    }
+
+    return undefined;
+  }, [locationValue, geoDepartmentId, geoRegion, geoLat, geoLng]);
+
+  const searchBbox = useMemo(() => getBboxForLocation(), [getBboxForLocation]);
 
   const [localFilter, setLocalFilter] = useState<FilterCriteria>(() => {
     if (locationQuery) {
@@ -94,14 +194,26 @@ function PropertiesPageInner() {
 
       const discardedIds = useFavoritesStore.getState().discarded.map((d) => d.property.id);
 
+      const body: Record<string, unknown> = {
+        filters,
+        excludeIds: discardedIds,
+        limit: 50,
+      };
+
+      if (searchBbox) {
+        body.bbox = searchBbox;
+      }
+
+      if (!searchBbox && !locationQuery && !provinceQuery && !geoLoading && !geoRegion && !geoDepartmentId) {
+        setProperties([]);
+        setSearchError('Seleccioná una ubicación o permití el acceso a tu ubicación para ver propiedades.');
+        return;
+      }
+
       const response = await csrfFetch('/api/properties/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          filters,
-          excludeIds: discardedIds,
-          limit: 50,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (response.ok) {
@@ -143,7 +255,7 @@ function PropertiesPageInner() {
 
   useEffect(() => {
     searchPropertiesRef.current?.();
-  }, []);
+  }, [searchBbox]);
 
   const handleClearSearch = useCallback(() => {
     router.push('/properties');
@@ -152,9 +264,15 @@ function PropertiesPageInner() {
   const handleClearFilters = useCallback(() => {
     setLocalFilter({});
     setActiveFilter({});
-    setLocationValue({ departmentId: null, zoneId: null, provinceId: null });
+    setLocationValue((current) => {
+      const next = { departmentId: null as string | null, zoneId: null as string | null, provinceId: null as string | null };
+      if (current.provinceId) next.provinceId = current.provinceId;
+      else if (geoRegion) next.provinceId = LOCATIONS.find((p) => p.name.toLowerCase() === geoRegion.toLowerCase())?.id ?? null;
+      if (!next.provinceId && geoDepartmentId && geoDepartmentId !== 'all') next.departmentId = geoDepartmentId;
+      return next;
+    });
     setIsFilterOpen(false);
-  }, [setActiveFilter]);
+  }, [setActiveFilter, geoRegion, geoDepartmentId]);
 
   const handleSelectProperty = useCallback((property: Property) => {
     setSelectedProperty(property);
@@ -169,19 +287,52 @@ function PropertiesPageInner() {
 
     if (locationQuery) {
       const q = locationQuery.toLowerCase();
-      result = result.filter((p) => {
-        const searchable = [
-          p.neighborhood,
-          p.city,
-          p.address,
-          p.title,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
+      const exactDepartmentId = (() => {
+        for (const province of LOCATIONS) {
+          for (const department of province.departments) {
+            const terms = [department.name.toLowerCase(), ...(department.aliases || []).map((a) => a.toLowerCase())];
+            if (terms.some((term) => term === q)) {
+              return department.id;
+            }
+          }
+        }
+        return undefined;
+      })();
 
-        return searchable.includes(q);
-      });
+      if (exactDepartmentId) {
+        const exactMatches = result.filter((p) => p.departmentId === exactDepartmentId);
+        if (exactMatches.length > 0) {
+          result = exactMatches;
+        } else {
+          result = result.filter((p) => {
+            const searchable = [
+              p.neighborhood,
+              p.city,
+              p.address,
+              p.title,
+            ]
+              .filter(Boolean)
+              .join(' ')
+              .toLowerCase();
+
+            return searchable.includes(q);
+          });
+        }
+      } else {
+        result = result.filter((p) => {
+          const searchable = [
+            p.neighborhood,
+            p.city,
+            p.address,
+            p.title,
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+
+          return searchable.includes(q);
+        });
+      }
     }
 
     if (provinceQuery) {
@@ -190,11 +341,15 @@ function PropertiesPageInner() {
         (p) => p.name.toLowerCase() === normalizedProvince
       );
       if (province) {
-        const departmentNames = province.departments.map((d) => d.name.toLowerCase());
+        const departmentIds = new Set(province.departments.map((d) => d.id));
         result = result.filter((p) => {
+          if (p.departmentId && departmentIds.has(p.departmentId)) return true;
           const cityText = (p.city || '').toLowerCase();
           const addressText = (p.address || '').toLowerCase();
-          return departmentNames.some((deptName) => cityText.includes(deptName) || addressText.includes(deptName));
+          return province.departments.some((d) => {
+            const terms = [d.name.toLowerCase(), ...(d.aliases || []).map((a) => a.toLowerCase())];
+            return terms.some((term) => cityText.includes(term) || addressText.includes(term));
+          });
         });
       }
     }
@@ -214,13 +369,24 @@ function PropertiesPageInner() {
       ? selectedDept.zones.find((z) => z.id === locationValue.zoneId) ?? null
       : null;
 
+    const departmentTerms = [
+      selectedDept.name.toLowerCase(),
+      ...(selectedDept.aliases || []).map((a) => a.toLowerCase()),
+    ];
+
     return result.filter((p) => {
+      if (p.departmentId) {
+        if (p.departmentId !== selectedDept.id) return false;
+        if (!selectedZone) return true;
+        if (p.localityId && p.localityId !== selectedZone.id) return false;
+        return true;
+      }
+
       const cityText = (p.city || '').toLowerCase();
       const neighborhoodText = (p.neighborhood || '').toLowerCase();
       const addressText = (p.address || '').toLowerCase();
-      const deptName = selectedDept.name.toLowerCase();
 
-      const cityMatch = cityText === deptName || cityText.includes(deptName) || addressText.includes(deptName);
+      const cityMatch = departmentTerms.some((term) => cityText === term || cityText.includes(term) || neighborhoodText.includes(term) || addressText.includes(term));
       if (!cityMatch) return false;
 
       if (!selectedZone) return true;
@@ -273,6 +439,7 @@ function PropertiesPageInner() {
             <LocationFilter
               value={locationValue}
               onChange={setLocationValue}
+              defaultProvinceId={geoRegion ? LOCATIONS.find((p) => p.name.toLowerCase() === geoRegion.toLowerCase())?.id ?? null : null}
             />
             <button
               onClick={() => setIsFilterOpen(true)}

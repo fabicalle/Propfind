@@ -3,14 +3,12 @@ import { z } from 'zod';
 import { CreatePropertyUseCase } from '@/application/use-cases/CreatePropertyUseCase';
 import { PrismaPropertyRepository } from '@/infrastructure/repositories/PrismaRepositories';
 import { successResponse, errorResponse } from '@/lib/api/response';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { getSessionFromRequest } from '@/lib/supabase/session';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { withRateLimit } from '@/lib/rateLimit';
 import { logAuthFailure } from '@/lib/security/auditLog';
-
-const prisma = new PrismaClient();
 
 const CreatePropertySchema = z.object({
   title: z.string().min(1),
@@ -25,8 +23,10 @@ const CreatePropertySchema = z.object({
   address: z.string().optional(),
   neighborhood: z.string().optional(),
   city: z.string().optional(),
-  lat: z.number(),
-  lng: z.number(),
+  departmentId: z.string().optional(),
+  localityId: z.string().optional(),
+  lat: z.number().refine((v) => v !== 0, 'La latitud es requerida'),
+  lng: z.number().refine((v) => v !== 0, 'La longitud es requerida'),
   amenities: z.array(z.string()).optional(),
   description: z.string().optional(),
   images: z.array(z.object({
@@ -107,6 +107,8 @@ async function POST_impl(request: NextRequest) {
       address: validated.address,
       neighborhood: validated.neighborhood,
       city: validated.city,
+      departmentId: validated.departmentId,
+      localityId: validated.localityId,
       images: validated.images,
       amenities: validated.amenities,
       publisherId: publisherId ?? undefined,

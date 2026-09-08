@@ -14,9 +14,10 @@ export interface LocationFilterValue {
 interface LocationFilterProps {
   value: LocationFilterValue;
   onChange: (value: LocationFilterValue) => void;
+  defaultProvinceId?: string | null;
 }
 
-export function LocationFilter({ value, onChange }: LocationFilterProps) {
+export function LocationFilter({ value, onChange, defaultProvinceId }: LocationFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [openDepartment, setOpenDepartment] = useState(false);
@@ -33,7 +34,8 @@ export function LocationFilter({ value, onChange }: LocationFilterProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const province = getProvinceById('mendoza');
+  const provinceId = value.provinceId || defaultProvinceId || 'mendoza';
+  const province = getProvinceById(provinceId);
 
   const selectedDepartment: LocationDepartment | null = value.departmentId
     ? province?.departments.find((d) => d.id === value.departmentId) ?? null
@@ -62,33 +64,41 @@ export function LocationFilter({ value, onChange }: LocationFilterProps) {
       }
 
       if (departmentParam) {
-        const found = province?.departments.find(
+        const currentProvinceId = provinceId || defaultProvinceId || 'mendoza';
+        const currentProvince = getProvinceById(currentProvinceId);
+        const found = currentProvince?.departments.find(
           (d) => d.name.toLowerCase() === departmentParam.toLowerCase()
         );
         if (found) departmentId = found.id;
       }
 
       if (departmentId && zoneParam) {
-        const dept = province?.departments.find((d) => d.id === departmentId);
+        const currentProvinceId = provinceId || defaultProvinceId || 'mendoza';
+        const currentProvince = getProvinceById(currentProvinceId);
+        const dept = currentProvince?.departments.find((d) => d.id === departmentId);
         const foundZone = dept?.zones.find((z) => z.name.toLowerCase() === zoneParam.toLowerCase());
         if (foundZone) zoneId = foundZone.id;
       }
 
       onChange({ departmentId, zoneId, provinceId });
     }
-  }, [searchParams, province, onChange]);
+  }, [searchParams, defaultProvinceId, onChange]);
 
   const handleSelectDepartment = useCallback(
     (departmentId: string | null) => {
       if (departmentId === null) {
         onChange({ departmentId: null, zoneId: null, provinceId: value.provinceId ?? null });
         if (value.provinceId) {
-          router.push(`/propiedades?provincia=${encodeURIComponent(value.provinceId)}`, { scroll: false });
+          router.push(`/properties?provincia=${encodeURIComponent(value.provinceId)}`, { scroll: false });
         } else {
-          router.push('/propiedades', { scroll: false });
+          router.push('/properties', { scroll: false });
         }
       } else {
         onChange({ departmentId, zoneId: null, provinceId: value.provinceId ?? null });
+        const params = new URLSearchParams();
+        if (value.provinceId) params.set('provincia', value.provinceId);
+        params.set('departamento', departmentId);
+        router.push(`/properties?${params.toString()}`, { scroll: false });
         setOpenZone(true);
       }
       setOpenDepartment(false);
@@ -230,7 +240,7 @@ export function LocationFilter({ value, onChange }: LocationFilterProps) {
           type="button"
           onClick={() => {
             onChange({ departmentId: null, zoneId: null, provinceId: null });
-            router.push('/propiedades', { scroll: false });
+            router.push('/properties', { scroll: false });
           }}
           className="rounded-full p-1.5 text-content-secondary transition-colors hover:bg-border-subtle hover:text-content-primary"
           aria-label="Limpiar ubicación"

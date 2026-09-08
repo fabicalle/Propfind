@@ -40,6 +40,8 @@ export class PrismaPropertyRepository implements PropertyRepository {
       address: row.address as string | null,
       neighborhood: row.neighborhood as string | null,
       city: row.city as string | null,
+      departmentId: (row.departmentId as string | null) ?? (row.department_id as string | null) ?? null,
+      localityId: (row.localityId as string | null) ?? (row.locality_id as string | null) ?? null,
       images: (row.images as Array<{ url: string; width: number; height: number; alt?: string }>) || [],
       amenities: (row.amenities as string[]) || [],
       sourceUrl: row.sourceUrl as string | null,
@@ -168,6 +170,8 @@ export class PrismaPropertyRepository implements PropertyRepository {
       address: string | null;
       neighborhood: string | null;
       city: string | null;
+      department_id: string | null;
+      locality_id: string | null;
       images: string | null;
       amenities: string | null;
       source_url: string | null;
@@ -180,7 +184,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
       SELECT
         p.id, p.title, p.description, p.price, p.area_m2, p.rooms, p.bedrooms, p.bathrooms,
         p.property_type, p.listing_type, p.listing_sub_type, p.seller_type, p.price_currency, p.credit_approved, p.parking,
-        p.lat, p.lng, p.address, p.neighborhood, p.city, p.images, p.amenities, p.source_url, p.is_active, p.created_at, p.publisher_id
+        p.lat, p.lng, p.address, p.neighborhood, p.city, p.department_id, p.locality_id, p.images, p.amenities, p.source_url, p.is_active, p.created_at, p.publisher_id
       FROM properties p
       WHERE ${whereClause}
       ORDER BY p.created_at DESC
@@ -224,6 +228,8 @@ export class PrismaPropertyRepository implements PropertyRepository {
         address: data.address,
         neighborhood: data.neighborhood,
         city: data.city,
+        departmentId: data.departmentId,
+        localityId: data.localityId,
         images: data.images as unknown as Prisma.InputJsonValue,
         amenities: data.amenities as unknown as Prisma.InputJsonValue,
         sourceUrl: data.sourceUrl,

@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { useFilterStore } from '@/store/useFilterStore';
 import { motionTokens } from '@/lib/motion/tokens';
 import { MainSearchBar } from '@/features/search/components/MainSearchBar';
+import { useGeoIP } from '@/features/properties/hooks/useGeoIP';
 
 const QUICK_FILTERS = [
   { label: 'Alquiler', value: 'rent' },
@@ -15,13 +16,22 @@ const QUICK_FILTERS = [
 export default function HomePage() {
   const router = useRouter();
   const setActiveFilter = useFilterStore((state) => state.setActiveFilter);
+  const { departmentId: geoDepartmentId, departmentName: geoDepartmentName, region: geoRegion } = useGeoIP();
 
   const handleQuickFilter = useCallback((filter: typeof QUICK_FILTERS[0]) => {
     setActiveFilter({
       listingType: filter.value as 'rent' | 'sale',
     });
-    router.push('/properties');
-  }, [setActiveFilter, router]);
+
+    const params = new URLSearchParams();
+    if (geoDepartmentId && geoDepartmentId !== 'all') {
+      params.set('departamento', geoDepartmentName || '');
+    } else if (geoRegion) {
+      params.set('provincia', geoRegion);
+    }
+    const queryString = params.toString();
+    router.push(`/properties${queryString ? `?${queryString}` : ''}`);
+  }, [setActiveFilter, router, geoDepartmentId, geoDepartmentName, geoRegion]);
 
   return (
     <div className="relative min-h-screen bg-app text-content-primary">

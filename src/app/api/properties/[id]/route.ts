@@ -42,6 +42,8 @@ export async function GET(
           address: true,
           neighborhood: true,
           city: true,
+          departmentId: true,
+          localityId: true,
           images: true,
           amenities: true,
           sourceUrl: true,
@@ -61,18 +63,21 @@ export async function GET(
       return value.toNumber();
     };
 
-    let contactInfo = null;
+    const session = await getSessionFromRequest(request);
+    const isAuthenticated = Boolean(session?.user?.id);
+
+    let publicContactInfo = null;
 
     if (!USE_MOCK && property.publisherId) {
       const publisher = await prisma.publisherProfile.findUnique({
         where: { id: property.publisherId },
-        select: { id: true, userId: true, phone: true },
+        select: { id: true, userId: true },
       });
 
       if (!publisher) {
         const fallbackPublisher = await prisma.publisherProfile.findFirst({
           where: { userId: property.publisherId },
-          select: { id: true, userId: true, phone: true },
+          select: { id: true, userId: true },
         });
         if (fallbackPublisher) {
           property.publisherId = fallbackPublisher.id;
@@ -81,36 +86,26 @@ export async function GET(
 
       const targetPublisher = publisher ?? await prisma.publisherProfile.findUnique({
         where: { id: property.publisherId },
-        select: { userId: true, phone: true },
+        select: { userId: true },
       });
 
       const user = targetPublisher?.userId
         ? await prisma.user.findUnique({
             where: { id: targetPublisher.userId },
-            select: { email: true, profile: true },
+            select: { profile: true },
           })
         : null;
 
       const profile = (user?.profile as Record<string, unknown> | null) ?? null;
       const name = typeof profile?.name === 'string' ? profile.name : null;
-      const email = typeof user?.email === 'string' ? user.email : null;
-      const publisherPhone = typeof targetPublisher?.phone === 'string' && targetPublisher.phone.trim() ? targetPublisher.phone.trim() : null;
-      const profilePhone = typeof profile?.phone === 'string' && profile.phone.trim() ? profile.phone.trim() : null;
-      const phone = publisherPhone || profilePhone;
-      const whatsapp = phone;
 
-      if (name || email || phone) {
-        contactInfo = {
-          name: name ?? '',
-          email: email ?? '',
-          phone: phone ?? '',
-          whatsapp: whatsapp ?? '',
-        };
+      if (isAuthenticated && name) {
+        publicContactInfo = { name };
       }
     } else if (USE_MOCK) {
       const mockRepo = new MockPropertyRepository();
       const mockProperty = await mockRepo.findById(id);
-      contactInfo = mockProperty?.contactInfo ?? null;
+      publicContactInfo = mockProperty?.contactInfo ? { name: mockProperty.contactInfo.name ?? '' } : null;
     }
 
     return NextResponse.json(
@@ -123,7 +118,7 @@ export async function GET(
           totalMonthlyCost: toNumber(property.totalMonthlyCost),
           images: property.images as Array<{ url: string; width: number; height: number; alt?: string }>,
           amenities: property.amenities as string[],
-          contactInfo,
+          contactInfo: publicContactInfo,
         },
       },
       {
@@ -195,6 +190,8 @@ async function PUT_impl(
         address: body.address,
         neighborhood: body.neighborhood,
         city: body.city,
+        departmentId: body.departmentId,
+        localityId: body.localityId,
         images: body.images,
         amenities: body.amenities,
         sourceUrl: body.sourceUrl,

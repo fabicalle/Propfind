@@ -53,6 +53,8 @@ export interface CreatePropertyInput {
   address?: string;
   neighborhood?: string;
   city?: string;
+  departmentId?: string;
+  localityId?: string;
   images?: Array<{ url: string; width: number; height: number; alt?: string }>;
   amenities?: string[];
   sourceUrl?: string;

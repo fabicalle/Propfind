@@ -27,6 +27,8 @@ export interface Property {
   address: string | null;
   neighborhood: string | null;
   city: string | null;
+  departmentId?: string | null;
+  localityId?: string | null;
   images: PropertyImage[];
   amenities: string[];
   sourceUrl: string | null;

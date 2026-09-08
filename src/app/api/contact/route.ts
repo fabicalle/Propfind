@@ -59,13 +59,6 @@ async function POST_impl(request: NextRequest) {
       },
       select: {
         id: true,
-        propertyId: true,
-        propertyTitle: true,
-        senderName: true,
-        senderEmail: true,
-        senderPhone: true,
-        message: true,
-        recipientId: true,
         status: true,
         createdAt: true,
       },

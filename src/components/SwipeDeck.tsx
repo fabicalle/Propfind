@@ -31,8 +31,8 @@ export function SwipeDeck({ initialProperties = [] }: SwipeDeckProps) {
       return;
     }
 
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
       if (direction === 'right' || direction === 'up') {
         favoritesStore.addFavorite(property);
       } else if (direction === 'left') {

@@ -5,6 +5,7 @@ import { PropertyType, ListingType } from '@prisma/client';
 import { AddressAutocomplete } from '@/components/AddressAutocomplete';
 import { ImageUploader, type ImagePreview } from '@/components/ImageUploader';
 import { TextIngestPanel } from '@/components/seller/TextIngestPanel';
+import { CityAutocomplete } from '@/components/CityAutocomplete';
 import { createSupabaseClient } from '@/lib/supabase/client';
 import { motionTokens } from '@/lib/motion/tokens';
 import { motion } from 'framer-motion';
@@ -55,6 +56,8 @@ interface PropertyFormData {
   address: string;
   neighborhood: string;
   city: string;
+  departmentId?: string | null;
+  localityId?: string | null;
   lat: number;
   lng: number;
   rooms: number;
@@ -79,6 +82,8 @@ const INITIAL_FORM: PropertyFormData = {
   address: '',
   neighborhood: '',
   city: '',
+  departmentId: null,
+  localityId: null,
   lat: 0,
   lng: 0,
   rooms: 1,
@@ -130,6 +135,8 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
             address: data.address || '',
             neighborhood: data.neighborhood || '',
             city: data.city || '',
+            departmentId: data.departmentId || null,
+            localityId: data.localityId || null,
             lat: data.lat || 0,
             lng: data.lng || 0,
             rooms: data.rooms || 1,
@@ -297,7 +304,6 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
     { key: 'priceCurrency', label: 'Moneda', type: 'select', placeholder: 'ARS', required: true },
     { key: 'expenses', label: 'Expensas', type: 'number', placeholder: 'Ej: 5000', required: false },
     { key: 'neighborhood', label: 'Barrio', type: 'text', placeholder: 'Ej: Palermo', required: true },
-    { key: 'city', label: 'Ciudad', type: 'text', placeholder: 'Ej: CABA', required: true },
     { key: 'rooms', label: 'Ambientes', type: 'number', placeholder: 'Ej: 2', required: true },
     { key: 'bedrooms', label: 'Dormitorios', type: 'number', placeholder: 'Ej: 1', required: false },
     { key: 'bathrooms', label: 'Baños', type: 'number', placeholder: 'Ej: 1', required: true },
@@ -372,11 +378,30 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
                    className={`${fieldClasses.base} ${fieldClasses.focus} ${
                      touched[field.key] && !form[field.key as keyof PropertyFormData] ? fieldClasses.error : ''
                    } ${submitting ? fieldClasses.disabled : ''}`}
-                 />
+                  />
               )}
             </motion.div>
           ))}
         </div>
+
+        <motion.div
+          className="mt-6"
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 1, opacity: 1 }}
+          transition={{ ...motionTokens.spring.gentle, delay: 0.32 }}
+        >
+          <label className="mb-2 block text-sm font-medium text-content-primary">Ciudad</label>
+          <CityAutocomplete
+            value={form.city}
+            onChange={(city, departmentId, localityId) => {
+              updateField('city', city);
+              updateField('departmentId', departmentId);
+              updateField('localityId', localityId);
+            }}
+            placeholder="Ej: Mendoza"
+            disabled={submitting}
+          />
+        </motion.div>
 
         <motion.div
           className="mt-6"

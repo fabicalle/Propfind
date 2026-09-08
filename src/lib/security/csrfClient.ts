@@ -1,9 +1,22 @@
+let csrfTokenPromise: Promise<string | null> | null = null;
+
 export async function getCsrfToken(): Promise<string | null> {
   if (typeof window === 'undefined') return null;
-  const response = await fetch('/api/csrf');
-  if (!response.ok) return null;
-  const data = await response.json();
-  return data.token ?? null;
+  if (!csrfTokenPromise) {
+    csrfTokenPromise = fetch('/api/csrf')
+      .then((response) => {
+        if (!response.ok) {
+          csrfTokenPromise = null;
+          return null;
+        }
+        return response.json().then((data) => data.token ?? null);
+      })
+      .catch(() => {
+        csrfTokenPromise = null;
+        return null;
+      });
+  }
+  return csrfTokenPromise;
 }
 
 export async function csrfFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {

@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import fs from 'fs';
 
 interface SecurityEvent {
   timestamp: string;
@@ -11,16 +10,8 @@ interface SecurityEvent {
   details?: Record<string, unknown>;
 }
 
-const SECURITY_LOG_FILE = process.env.SECURITY_LOG_PATH || 'security-events.json';
-
 function logSecurityEvent(event: SecurityEvent): void {
-  const logLine = JSON.stringify({ ...event, timestamp: new Date().toISOString() }) + '\n';
-
-  try {
-    fs.appendFileSync(SECURITY_LOG_FILE, logLine);
-  } catch {
-    console.error('[SECURITY] Failed to write log:', event);
-  }
+  console.log('[SECURITY]', JSON.stringify(event));
 }
 
 export function logRateLimit(request: NextRequest): void {

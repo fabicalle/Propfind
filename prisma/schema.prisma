@@ -45,6 +45,8 @@ model Property {
   neighborhood     String?
   city             String?
   geoHash          String?                   @map("geo_hash")
+  departmentId     String?                   @map("department_id")
+  localityId       String?                   @map("locality_id")
   images           Json                      @default("[]")
   amenities        Json                      @default("[]")
   sourceUrl        String?                   @map("source_url")
