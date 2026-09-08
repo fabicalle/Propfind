@@ -20,7 +20,7 @@ const UpdatePropertySchema = z.object({
   areaM2: z.number().min(0, 'La superficie no puede ser negativa').optional(),
   rooms: z.number().int().min(0).optional(),
   bathrooms: z.number().int().min(0).optional(),
-  propertyType: z.string().optional(),
+  propertyType: z.enum(['apartment', 'house', 'condo', 'land', 'commercial']).optional(),
   listingType: z.enum(['sale', 'rent']),
   lat: z.number().refine((v) => v !== 0, 'La latitud es requerida'),
   lng: z.number().refine((v) => v !== 0, 'La longitud es requerida'),

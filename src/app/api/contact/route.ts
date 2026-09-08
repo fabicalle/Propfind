@@ -24,7 +24,7 @@ async function POST_impl(request: NextRequest) {
     const validated = ContactSchema.parse(body);
 
     const property = await prisma.property.findUnique({
-      where: { id: propertyId },
+      where: { id: validated.propertyId },
       select: { id: true, publisherId: true },
     });
 
