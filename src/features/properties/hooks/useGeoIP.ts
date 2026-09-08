@@ -30,24 +30,66 @@ export function useGeoIP() {
     setError(null);
 
     try {
-      const response = await fetch('https://ipapi.co/json/', {
-        headers: { Accept: 'application/json' },
-      });
-
-      if (!response.ok) {
-        throw new Error(`ipapi responded with ${response.status}`);
+      const cached = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('geoip_cache') : null;
+      if (cached) {
+        const data = JSON.parse(cached) as GeoIPResult;
+        setResult(data);
+        setLoading(false);
+        return;
       }
 
-      const data = await response.json();
+      let data: Record<string, unknown> | null = null;
 
-      if (data.error) {
-        throw new Error(data.reason || 'ipapi error');
+      try {
+        const response = await fetch('https://ipapi.co/json/', {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'PropertyFinder/1.0',
+          },
+        });
+
+        if (response.ok) {
+          const parsed = await response.json();
+          if (parsed && typeof parsed === 'object' && !('error' in parsed)) {
+            data = parsed as Record<string, unknown>;
+          }
+        }
+      } catch {
+        data = null;
       }
 
-      const region = data.region || data.region_name || data.state || '';
-      const city = data.city || '';
-      const lat = typeof data.latitude === 'number' ? data.latitude : undefined;
-      const lng = typeof data.longitude === 'number' ? data.longitude : undefined;
+      if (!data) {
+        try {
+          const fallback = await fetch('http://ip-api.com/json/', {
+            headers: { Accept: 'application/json' },
+          });
+
+          if (fallback.ok) {
+            const fallbackData = await fallback.json();
+            if (fallbackData && typeof fallbackData === 'object' && !('fail' in fallbackData)) {
+              const fd = fallbackData as Record<string, unknown>;
+              data = {
+                city: (fd.city as string) || '',
+                region: (fd.regionName as string) || (fd.region as string) || '',
+                country_name: (fd.country as string) || '',
+                latitude: fd.lat as number | undefined,
+                longitude: fd.lon as number | undefined,
+              };
+            }
+          }
+        } catch {
+          data = null;
+        }
+      }
+
+      if (!data) {
+        throw new Error('No se pudo detectar la ubicación');
+      }
+
+      const region = (data.region as string) || (data.region_name as string) || (data.state as string) || '';
+      const city = (data.city as string) || '';
+      const lat = typeof data.latitude === 'number' ? (data.latitude as number) : typeof data.lat === 'number' ? (data.lat as number) : undefined;
+      const lng = typeof data.longitude === 'number' ? (data.longitude as number) : typeof data.lon === 'number' ? (data.lon as number) : undefined;
 
       let provinceId: string | null = null;
       let departmentId: string | null = null;
@@ -71,16 +113,21 @@ export function useGeoIP() {
         }
       }
 
-      setResult({
+      const payload: GeoIPResult = {
         provinceId,
         departmentId,
         departmentName,
         city,
         region,
-        country: data.country_name,
+        country: (data.country_name as string) || (data.country as string) || '',
         lat,
         lng,
-      });
+      };
+
+      setResult(payload);
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('geoip_cache', JSON.stringify(payload));
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setError(message);

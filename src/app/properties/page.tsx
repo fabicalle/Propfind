@@ -10,7 +10,7 @@ import PropertyDetailModal from '@/components/PropertyDetailModal';
 import { FilterPanel } from '@/components/FilterPanel';
 import { LocationFilter, type LocationFilterValue } from '@/features/properties/components/LocationFilter';
 import { loadFiltersLocally } from '@/lib/persistence/filterPersistence';
-import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
+import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, DEFAULT_DEPARTMENT_ID, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
 import { motion } from 'framer-motion';
 import { motionTokens } from '@/lib/motion/tokens';
 import { Suspense } from 'react';
@@ -148,6 +148,14 @@ function PropertiesPageInner() {
       }
     }
 
+    if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId) {
+      const defaultProvince = getProvinceById('mendoza');
+      const defaultBbox = getProvinceBbox('mendoza') ?? defaultProvince?.departments.find((d) => d.id === DEFAULT_DEPARTMENT_ID)?.bbox;
+      if (defaultBbox) {
+        return defaultBbox;
+      }
+    }
+
     return undefined;
   }, [locationValue, geoDepartmentId, geoRegion, geoLat, geoLng]);
 
@@ -204,7 +212,7 @@ function PropertiesPageInner() {
         body.bbox = searchBbox;
       }
 
-      if (!searchBbox && !locationQuery && !provinceQuery && !geoLoading && !geoRegion && !geoDepartmentId) {
+      if (!searchBbox && !locationQuery && !provinceQuery) {
         setProperties([]);
         setSearchError('Seleccioná una ubicación o permití el acceso a tu ubicación para ver propiedades.');
         return;
