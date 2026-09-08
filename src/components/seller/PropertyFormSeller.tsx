@@ -631,6 +631,7 @@ export function PropertyFormSeller({ userId, draft, onSaveDraft, onSuccess, onCa
             placeholder="Describí tu propiedad..."
             rows={4}
             disabled={submitting}
+            required
             className={`${fieldClasses.base} ${fieldClasses.focus} resize-none`}
           />
         </motion.div>

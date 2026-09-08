@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { withRateLimit } from '@/lib/rateLimit';
 import { sendContactNotification } from '@/lib/notifications/email';
+
+const ContactSchema = z.object({
+  propertyId: z.string().min(1, 'propertyId inválido'),
+  propertyTitle: z.string().min(1, 'propertyTitle inválido'),
+  name: z.string().min(2, 'Nombre inválido'),
+  email: z.string().email('Email inválido'),
+  phone: z.string().optional(),
+  message: z.string().min(10, 'Mensaje inválido'),
+});
 
 async function POST_impl(request: NextRequest) {
   const originError = rejectInvalidOrigin(request);
@@ -11,23 +21,7 @@ async function POST_impl(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { propertyId, propertyTitle, name, email, phone, message } = body as Record<string, unknown>;
-
-    if (typeof propertyId !== 'string' || !propertyId.trim()) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'propertyId inválido' } }, { status: 400 });
-    }
-    if (typeof propertyTitle !== 'string' || !propertyTitle.trim()) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'propertyTitle inválido' } }, { status: 400 });
-    }
-    if (typeof name !== 'string' || name.trim().length < 2) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Nombre inválido' } }, { status: 400 });
-    }
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Email inválido' } }, { status: 400 });
-    }
-    if (typeof message !== 'string' || message.trim().length < 10) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Mensaje inválido' } }, { status: 400 });
-    }
+    const validated = ContactSchema.parse(body);
 
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
@@ -49,12 +43,12 @@ async function POST_impl(request: NextRequest) {
 
     const contactMessage = await prisma.contactMessage.create({
       data: {
-        propertyId,
-        propertyTitle: propertyTitle.trim(),
-        senderName: name.trim(),
-        senderEmail: email.trim(),
-        senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : null,
-        message: message.trim(),
+        propertyId: validated.propertyId,
+        propertyTitle: validated.propertyTitle.trim(),
+        senderName: validated.name.trim(),
+        senderEmail: validated.email.trim(),
+        senderPhone: validated.phone?.trim() || null,
+        message: validated.message.trim(),
         recipientId: recipientUserId,
       },
       select: {
@@ -72,16 +66,15 @@ async function POST_impl(request: NextRequest) {
       : null;
 
     const recipientEmail = user?.email || null;
-    const recipientPhone = publisher?.phone || null;
 
     if (recipientEmail) {
       await sendContactNotification({
         to: recipientEmail,
-        propertyTitle: propertyTitle.trim(),
-        senderName: name.trim(),
-        senderEmail: email.trim(),
-        senderPhone: typeof phone === 'string' && phone.trim() ? phone.trim() : undefined,
-        message: message.trim(),
+        propertyTitle: validated.propertyTitle.trim(),
+        senderName: validated.name.trim(),
+        senderEmail: validated.email.trim(),
+        senderPhone: validated.phone?.trim() || undefined,
+        message: validated.message.trim(),
       }).catch((err) => {
         console.error('Resend notification error:', err);
       });

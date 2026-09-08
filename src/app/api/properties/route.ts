@@ -28,7 +28,7 @@ const CreatePropertySchema = z.object({
   lat: z.number().refine((v) => v !== 0, 'La latitud es requerida'),
   lng: z.number().refine((v) => v !== 0, 'La longitud es requerida'),
   amenities: z.array(z.string()).optional(),
-  description: z.string().optional(),
+  description: z.string().min(1, 'La descripción es requerida'),
   images: z.array(z.object({
     url: z.string(),
     width: z.number(),

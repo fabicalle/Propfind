@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { getSessionFromRequest } from '@/lib/supabase/session';
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { logAuthFailure } from '@/lib/security/auditLog';
+
+const UpdateProfileSchema = z.object({
+  firstName: z.string().min(1, 'Nombre y apellido son obligatorios'),
+  lastName: z.string().min(1, 'Nombre y apellido son obligatorios'),
+  phone: z.string().regex(/^\+?\d{7,15}$/, 'Ingresá un número válido con código de área'),
+});
 
 export async function GET(request: NextRequest) {
   const originError = rejectInvalidOrigin(request);
@@ -63,24 +70,10 @@ async function PATCH_impl(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { firstName, lastName, phone } = body as {
-      firstName?: string;
-      lastName?: string;
-      phone?: string;
-    };
-
-    if (!firstName?.trim() || !lastName?.trim()) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Nombre y apellido son obligatorios' } }, { status: 400 });
-    }
-
-    if (!phone?.trim()) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'El teléfono es obligatorio' } }, { status: 400 });
-    }
+    const validated = UpdateProfileSchema.parse(body);
+    const { firstName, lastName, phone } = validated;
 
     const cleanedPhone = phone.replace(/[\s\-()]/g, '');
-    if (!/^\+?\d{7,15}$/.test(cleanedPhone)) {
-      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: 'Ingresá un número válido con código de área' } }, { status: 400 });
-    }
 
     let user = await prisma.user.findUnique({
       where: { id: session.user.id },

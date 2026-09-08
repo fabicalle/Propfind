@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { MockPropertyRepository } from '@/mocks/repositories';
 import { successResponse, errorResponse } from '@/lib/api/response';
@@ -9,6 +10,34 @@ import { withRateLimit } from '@/lib/rateLimit';
 import { logAuthFailure } from '@/lib/security/auditLog';
 
 const USE_MOCK = process.env.USE_MOCK_DATA === 'true';
+
+const UpdatePropertySchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1, 'La descripción es requerida'),
+  price: z.number().min(0, 'El precio no puede ser negativo'),
+  priceCurrency: z.enum(['ARS', 'USD']),
+  totalMonthlyCost: z.number().min(0).optional(),
+  areaM2: z.number().min(0, 'La superficie no puede ser negativa').optional(),
+  rooms: z.number().int().min(0).optional(),
+  bathrooms: z.number().int().min(0).optional(),
+  propertyType: z.string().optional(),
+  listingType: z.enum(['sale', 'rent']),
+  lat: z.number().refine((v) => v !== 0, 'La latitud es requerida'),
+  lng: z.number().refine((v) => v !== 0, 'La longitud es requerida'),
+  address: z.string().optional(),
+  neighborhood: z.string().optional(),
+  city: z.string().optional(),
+  departmentId: z.string().optional(),
+  localityId: z.string().optional(),
+  images: z.array(z.object({
+    url: z.string(),
+    width: z.number(),
+    height: z.number(),
+    alt: z.string().optional(),
+  })).optional(),
+  amenities: z.array(z.string()).optional(),
+  sourceUrl: z.string().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -151,6 +180,7 @@ async function PUT_impl(
 
     const { id } = await params;
     const body = await request.json();
+    const validated = UpdatePropertySchema.parse(body);
 
     const existing = await prisma.property.findUnique({
       where: { id },
@@ -175,26 +205,26 @@ async function PUT_impl(
     const property = await prisma.property.update({
       where: { id },
       data: {
-        title: body.title,
-        description: body.description,
-        price: body.price,
-        priceCurrency: body.priceCurrency,
-        totalMonthlyCost: body.totalMonthlyCost,
-        areaM2: body.areaM2,
-        rooms: body.rooms,
-        bathrooms: body.bathrooms,
-        propertyType: body.propertyType,
-        listingType: body.listingType,
-        lat: body.lat,
-        lng: body.lng,
-        address: body.address,
-        neighborhood: body.neighborhood,
-        city: body.city,
-        departmentId: body.departmentId,
-        localityId: body.localityId,
-        images: body.images,
-        amenities: body.amenities,
-        sourceUrl: body.sourceUrl,
+        title: validated.title,
+        description: validated.description,
+        price: validated.price,
+        priceCurrency: validated.priceCurrency,
+        totalMonthlyCost: validated.totalMonthlyCost,
+        areaM2: validated.areaM2,
+        rooms: validated.rooms,
+        bathrooms: validated.bathrooms,
+        propertyType: validated.propertyType,
+        listingType: validated.listingType,
+        lat: validated.lat,
+        lng: validated.lng,
+        address: validated.address,
+        neighborhood: validated.neighborhood,
+        city: validated.city,
+        departmentId: validated.departmentId,
+        localityId: validated.localityId,
+        images: validated.images,
+        amenities: validated.amenities,
+        sourceUrl: validated.sourceUrl,
       },
     });
 
