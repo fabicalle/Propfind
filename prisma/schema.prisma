@@ -74,7 +74,6 @@ model Property {
   @@index([listingSubType])
   @@index([neighborhood])
   @@index([createdAt])
-  @@index([geog], type: Gist)
   @@map("properties")
 }
 
