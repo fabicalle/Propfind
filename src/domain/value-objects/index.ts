@@ -68,3 +68,10 @@ export interface RecordSwipeInput {
     source?: string;
   };
 }
+
+export interface CreatePropertyReportInput {
+  propertyId: string;
+  reason: 'INAPPROPRIATE_CONTENT' | 'NOT_A_REAL_ESTATE' | 'SPAM_OR_FRAUD' | 'OTHER';
+  details?: string;
+  reporterEmail?: string;
+}

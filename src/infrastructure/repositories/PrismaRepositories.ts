@@ -1,6 +1,6 @@
-import { PropertyRepository, InteractionRepository } from '@/application/ports';
-import { Property } from '@/domain/entities';
-import { BoundingBox, PropertySearchFilters, CreatePropertyInput } from '@/domain/value-objects';
+import { PropertyRepository, InteractionRepository, PropertyReportRepository } from '@/application/ports';
+import { Property, PropertyReport } from '@/domain/entities';
+import { BoundingBox, PropertySearchFilters, CreatePropertyInput, CreatePropertyReportInput } from '@/domain/value-objects';
 import { prisma } from '@/lib/prisma';
 import { PropertyType } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
@@ -65,7 +65,10 @@ export class PrismaPropertyRepository implements PropertyRepository {
    }): Promise<Property[]> {
     const { bbox, filters, excludeIds = [], limit, offset } = params;
 
-    const whereConditions: string[] = ['p.is_active = true'];
+    const whereConditions: string[] = [
+      'p.is_active = true',
+      'p.id NOT IN (SELECT property_id FROM property_reports)',
+    ];
     const queryParams: (string | number | string[] | boolean)[] = [];
 
      const isFullWorldBbox =
@@ -273,5 +276,46 @@ export class PrismaInteractionRepository implements InteractionRepository {
       take: limit,
     });
     return interactions;
+  }
+}
+
+export class PrismaPropertyReportRepository implements PropertyReportRepository {
+  async create(data: CreatePropertyReportInput): Promise<PropertyReport> {
+    const report = await prisma.propertyReport.create({
+      data: {
+        property: { connect: { id: data.propertyId } },
+        reason: data.reason as any,
+        details: data.details,
+        reporterEmail: data.reporterEmail,
+      },
+    });
+    return {
+      id: report.id,
+      propertyId: report.propertyId,
+      reason: report.reason as PropertyReport['reason'],
+      details: report.details,
+      reporterEmail: report.reporterEmail,
+      createdAt: report.createdAt,
+    };
+  }
+
+  async countByPropertyId(propertyId: string): Promise<number> {
+    const count = await prisma.propertyReport.count({
+      where: { propertyId },
+    });
+    return count;
+  }
+
+  async getReportedPropertyIds(threshold = 1): Promise<string[]> {
+    const results = await prisma.propertyReport.groupBy({
+      by: ['propertyId'],
+      _count: { propertyId: true },
+      having: {
+        propertyId: {
+          _count: { gte: threshold },
+        },
+      },
+    });
+    return results.map((r: { propertyId: string }) => r.propertyId);
   }
 }

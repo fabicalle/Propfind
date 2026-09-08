@@ -1,5 +1,5 @@
-import { Property } from '@/domain/entities';
-import { BoundingBox, PropertySearchFilters, CreatePropertyInput } from '@/domain/value-objects';
+import { Property, PropertyReport } from '@/domain/entities';
+import { BoundingBox, PropertySearchFilters, CreatePropertyInput, CreatePropertyReportInput } from '@/domain/value-objects';
 
 export interface PropertyRepository {
   searchByBoundingBox(params: {
@@ -26,4 +26,10 @@ export interface InteractionRepository {
   }): Promise<void>;
 
   findRecentBySession(sessionId: string, limit?: number): Promise<Array<{ propertyId: string }>>;
+}
+
+export interface PropertyReportRepository {
+  create(data: CreatePropertyReportInput): Promise<PropertyReport>;
+  countByPropertyId(propertyId: string): Promise<number>;
+  getReportedPropertyIds(threshold?: number): Promise<string[]>;
 }

@@ -105,3 +105,14 @@ export interface TelemetryEvent {
   type: string;
   payload: Record<string, unknown>;
 }
+
+export type ReportReason = 'INAPPROPRIATE_CONTENT' | 'NOT_A_REAL_ESTATE' | 'SPAM_OR_FRAUD' | 'OTHER';
+
+export interface PropertyReport {
+  id: string;
+  propertyId: string;
+  reason: ReportReason;
+  details: string | null;
+  reporterEmail: string | null;
+  createdAt: Date;
+}

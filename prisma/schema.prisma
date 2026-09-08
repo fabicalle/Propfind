@@ -60,6 +60,7 @@ model Property {
   creditApproved   Boolean?                  @map("credit_approved")
   parking          String?
   publisher        PublisherProfile?         @relation(fields: [publisherId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reports          PropertyReport[]
   interactions     UserInteraction[]
   savedBy          UserSavedProperties[]
 
@@ -185,6 +186,38 @@ model spatial_ref_sys {
   proj4text String? @db.VarChar(2048)
 }
 
+model ContactMessage {
+  id            String    @id @default(uuid())
+  propertyId    String    @map("property_id")
+  propertyTitle String    @map("property_title")
+  senderName    String    @map("sender_name")
+  senderEmail   String    @map("sender_email")
+  senderPhone   String?   @map("sender_phone")
+  message       String
+  recipientId   String?   @map("recipient_id")
+  status        String    @default("new") @map("status")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
+  read          Boolean   @default(false) @map("read")
+
+  @@index([recipientId, createdAt])
+  @@index([propertyId])
+  @@map("contact_messages")
+}
+
+model PropertyReport {
+  id            String       @id @default(uuid())
+  propertyId    String       @map("property_id")
+  reason        ReportReason @default(OTHER)
+  details       String?
+  reporterEmail String?      @map("reporter_email")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  property      Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@map("property_reports")
+}
+
 enum AuthProvider {
   anonymous
   google
@@ -234,28 +267,16 @@ enum ListingType {
   rent
 }
 
-model ContactMessage {
-  id            String    @id @default(uuid())
-  propertyId    String    @map("property_id")
-  propertyTitle String    @map("property_title")
-  senderName    String    @map("sender_name")
-  senderEmail   String    @map("sender_email")
-  senderPhone   String?   @map("sender_phone")
-  message       String    @db.Text
-  recipientId   String?   @map("recipient_id")
-  status        String    @default("new") @map("status")
-  read          Boolean   @default(false) @map("read")
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime? @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  @@index([recipientId, createdAt])
-  @@index([propertyId])
-  @@map("contact_messages")
-}
-
 enum SellerType {
   OWNER
   AGENCY
+}
+
+enum ReportReason {
+  INAPPROPRIATE_CONTENT
+  NOT_A_REAL_ESTATE
+  SPAM_OR_FRAUD
+  OTHER
 }
 
 enum user_role {

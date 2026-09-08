@@ -8,6 +8,7 @@ import type { Property } from '@/store/useAppStore';
 import { MapPin } from 'lucide-react';
 import { usePropertyDetailSlider } from '@/hooks/usePropertyDetailSlider';
 import { ContactModal } from '@/features/properties/components/ContactModal';
+import { ReportModal } from '@/components/properties/ReportModal';
 
 interface PropertyDetailModalProps {
   property: Property;
@@ -17,6 +18,7 @@ interface PropertyDetailModalProps {
 
 export default function PropertyDetailModal({ property, isOpen, onClose }: PropertyDetailModalProps) {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const isAuthenticated = useSessionStore((state) => state.userSession.isAuthenticated);
 
   const { images, currentImageIndex, handlePrev, handleNext } = usePropertyDetailSlider(property);
@@ -224,25 +226,39 @@ export default function PropertyDetailModal({ property, isOpen, onClose }: Prope
                )}
 
                <div className="mt-6">
-                  <button
-                    onClick={handleContactClick}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-olive px-3.5 font-bold hover:bg-brand-olive/90 py-3.5 shadow-sm text-white transition-all hover:scale-[1.01] active:scale-[0.99] focus:ring-brand-terracotta/50 focus:outline-none focus:ring-2 focus:scale-[1.01]"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
-                    Contactar al anunciante
-                  </button>
+                   <button
+                     onClick={handleContactClick}
+                       className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-olive px-3.5 font-bold hover:bg-brand-olive/90 py-3.5 shadow-sm text-white transition-all hover:scale-[1.01] active:scale-[0.99] focus:ring-brand-terracotta/50 focus:outline-none focus:ring-2 focus:scale-[1.01]"
+                   >
+                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                     </svg>
+                     Contactar al anunciante
+                   </button>
 
-                  <ContactModal
-                    property={property}
-                    isOpen={isContactModalOpen}
-                    onClose={() => setIsContactModalOpen(false)}
-                    isAuthenticated={isAuthenticated}
-                    onLoginRedirect={() => {
-                      window.location.href = '/login?redirect=/properties/' + property.id;
-                    }}
-                  />
+                   <button
+                     type="button"
+                     onClick={() => setShowReportModal(true)}
+                     className="mt-3 text-center text-sm text-content-secondary hover:text-brand-terracotta transition-colors"
+                   >
+                     Denunciar esta publicación
+                   </button>
+
+                   <ContactModal
+                     property={property}
+                     isOpen={isContactModalOpen}
+                     onClose={() => setIsContactModalOpen(false)}
+                     isAuthenticated={isAuthenticated}
+                     onLoginRedirect={() => {
+                       window.location.href = '/login?redirect=/properties/' + property.id;
+                     }}
+                   />
+
+                   <ReportModal
+                     propertyId={property.id}
+                     isOpen={showReportModal}
+                     onClose={() => setShowReportModal(false)}
+                   />
                </div>
              </div>
            </motion.div>
