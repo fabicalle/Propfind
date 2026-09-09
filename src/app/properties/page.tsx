@@ -10,7 +10,7 @@ import PropertyDetailModal from '@/components/PropertyDetailModal';
 import { FilterPanel } from '@/components/FilterPanel';
 import { LocationFilter, type LocationFilterValue } from '@/features/properties/components/LocationFilter';
 import { loadFiltersLocally } from '@/lib/persistence/filterPersistence';
-import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, ARGENTINA_BBOX, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
+import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, ARGENTINA_BBOX, type LocationProvince, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
 import { motion } from 'framer-motion';
 import { motionTokens } from '@/lib/motion/tokens';
 import { Suspense } from 'react';
@@ -358,45 +358,77 @@ function PropertiesPageInner() {
       }
     }
 
-    if (!locationValue.departmentId && !locationValue.zoneId) {
+    if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId) {
       return result;
     }
 
-    const province = getProvinceById('mendoza');
-    const selectedDept: LocationDepartment | null = locationValue.departmentId
-      ? province?.departments.find((d) => d.id === locationValue.departmentId) ?? null
-      : null;
+    let selectedProvince: LocationProvince | null = null;
+    let selectedDept: LocationDepartment | null = null;
 
-    if (!selectedDept) return result;
+    if (locationValue.provinceId) {
+      selectedProvince = getProvinceById(locationValue.provinceId);
+      if (locationValue.departmentId) {
+        selectedDept = findDepartmentById(locationValue.departmentId);
+        if (!selectedDept && selectedProvince) {
+          selectedDept = selectedProvince.departments.find((d) => d.id === locationValue.departmentId) ?? null;
+        }
+      }
+    } else if (locationValue.departmentId) {
+      selectedDept = findDepartmentById(locationValue.departmentId);
+    }
 
-    const selectedZone: LocationZone | null = locationValue.zoneId
+    if (!selectedDept && !selectedProvince) return result;
+
+    const selectedZone: LocationZone | null = selectedDept && locationValue.zoneId
       ? selectedDept.zones.find((z) => z.id === locationValue.zoneId) ?? null
       : null;
 
-    const departmentTerms = [
-      selectedDept.name.toLowerCase(),
-      ...(selectedDept.aliases || []).map((a) => a.toLowerCase()),
-    ];
+    const departmentTerms: string[] = selectedDept
+      ? [selectedDept.name.toLowerCase(), ...(selectedDept.aliases || []).map((a) => a.toLowerCase())]
+      : [];
+    const provinceNameTerms: string[] = selectedProvince && !selectedDept
+      ? [selectedProvince.name.toLowerCase()]
+      : [];
+    const allTerms = [...provinceNameTerms, ...departmentTerms];
 
     return result.filter((p) => {
-      if (p.departmentId) {
-        if (p.departmentId !== selectedDept.id) return false;
+      if (selectedDept) {
+        if (p.departmentId) {
+          if (p.departmentId !== selectedDept.id) return false;
+          if (!selectedZone) return true;
+          if (p.localityId && p.localityId !== selectedZone.id) return false;
+          return true;
+        }
+
+        const cityText = (p.city || '').toLowerCase();
+        const neighborhoodText = (p.neighborhood || '').toLowerCase();
+        const addressText = (p.address || '').toLowerCase();
+
+        const cityMatch = departmentTerms.some((term) => cityText === term || cityText.includes(term) || neighborhoodText.includes(term) || addressText.includes(term));
+        if (!cityMatch) return false;
+
         if (!selectedZone) return true;
-        if (p.localityId && p.localityId !== selectedZone.id) return false;
+
+        const zoneName = selectedZone.name.toLowerCase();
+        return neighborhoodText === zoneName || neighborhoodText.includes(zoneName) || addressText.includes(zoneName);
+      }
+
+      if (selectedProvince && !selectedDept) {
+        const cityText = (p.city || '').toLowerCase();
+        const addressText = (p.address || '').toLowerCase();
+        const provinceNameLower = selectedProvince.name.toLowerCase();
+
+        if (provinceNameLower === 'ciudad autónoma de buenos aires' || provinceNameLower === 'caba') {
+          return cityText.includes('buenos aires') || cityText.includes('caba') || addressText.includes('caba') || addressText.includes('buenos aires');
+        }
+
+        if (provinceNameTerms.length > 0) {
+          return provinceNameTerms.some((term) => cityText === term || cityText.includes(term) || addressText.includes(term));
+        }
         return true;
       }
 
-      const cityText = (p.city || '').toLowerCase();
-      const neighborhoodText = (p.neighborhood || '').toLowerCase();
-      const addressText = (p.address || '').toLowerCase();
-
-      const cityMatch = departmentTerms.some((term) => cityText === term || cityText.includes(term) || neighborhoodText.includes(term) || addressText.includes(term));
-      if (!cityMatch) return false;
-
-      if (!selectedZone) return true;
-
-      const zoneName = selectedZone.name.toLowerCase();
-      return neighborhoodText === zoneName || neighborhoodText.includes(zoneName) || addressText.includes(zoneName);
+      return true;
     });
   }, [properties, locationValue, locationQuery, provinceQuery]);
 

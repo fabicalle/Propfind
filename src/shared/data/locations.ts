@@ -102,6 +102,12 @@ export const LOCATIONS: LocationProvince[] = [
         bbox: { south: -34.70, west: -58.60, north: -34.55, east: -58.30 },
         zones: [],
       },
+      {
+        id: 'pinamar',
+        name: 'Pinamar',
+        bbox: { south: -37.15, west: -57.10, north: -37.05, east: -56.85 },
+        zones: [],
+      },
     ],
   },
   {
@@ -162,7 +168,7 @@ export const LOCATIONS: LocationProvince[] = [
           { id: 'guemes', name: 'Güemes' },
         ],
       },
-      {
+       {
         id: 'villa-carlos-paz',
         name: 'Villa Carlos Paz',
         bbox: { south: -31.48, west: -64.30, north: -31.40, east: -64.18 },
@@ -170,6 +176,18 @@ export const LOCATIONS: LocationProvince[] = [
           { id: 'centro-vcp', name: 'Centro' },
           { id: 'zona-lago', name: 'Zona Lago' },
         ],
+      },
+      {
+        id: 'la-cumbre',
+        name: 'La Cumbre',
+        bbox: { south: -31.55, west: -64.30, north: -31.45, east: -64.20 },
+        zones: [{ id: 'centro-lc', name: 'Centro' }],
+      },
+      {
+        id: 'rio-cuarto',
+        name: 'Río Cuarto',
+        bbox: { south: -31.50, west: -64.25, north: -31.40, east: -64.10 },
+        zones: [{ id: 'centro-rc', name: 'Centro' }],
       },
     ],
   },
@@ -480,7 +498,7 @@ export const LOCATIONS: LocationProvince[] = [
           { id: 'santo-tome', name: 'Santo Tomé' },
         ],
       },
-      {
+       {
         id: 'rosario',
         name: 'Rosario',
         bbox: { south: -31.50, west: -60.70, north: -31.30, east: -60.60 },
@@ -488,6 +506,12 @@ export const LOCATIONS: LocationProvince[] = [
           { id: 'centro-rosario', name: 'Centro' },
           { id: 'norte-rosario', name: 'Norte' },
         ],
+      },
+      {
+        id: 'reconquista',
+        name: 'Reconquista',
+        bbox: { south: -31.20, west: -61.45, north: -31.10, east: -61.30 },
+        zones: [{ id: 'centro-reconquista', name: 'Centro' }],
       },
     ],
   },
