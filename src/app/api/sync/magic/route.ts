@@ -36,7 +36,10 @@ async function POST_impl(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message || 'Invalid input' }, { status: 400 });
+    }
     return NextResponse.json({ error: 'Error en sync' }, { status: 500 });
   }
 }

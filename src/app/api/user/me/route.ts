@@ -118,7 +118,10 @@ async function PATCH_impl(request: NextRequest) {
         phone: (newProfile.phone as string) || '',
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: error.errors[0]?.message || 'Invalid input' } }, { status: 400 });
+    }
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }
 }

@@ -82,6 +82,9 @@ async function POST_impl(request: NextRequest) {
 
     return NextResponse.json({ success: true, data: contactMessage }, { status: 201 });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ success: false, error: { code: 'VALIDATION_ERROR', message: error.errors[0]?.message || 'Invalid input' } }, { status: 400 });
+    }
     console.error('Contact API error:', error);
     return NextResponse.json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Error interno' } }, { status: 500 });
   }

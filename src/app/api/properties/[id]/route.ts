@@ -239,6 +239,9 @@ async function PUT_impl(
 
     return successResponse({ id: property.id });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return errorResponse('VALIDATION_ERROR', error.errors[0]?.message || 'Invalid input', 400);
+    }
     return errorResponse('INTERNAL_ERROR', 'Failed to update property');
   }
 }
