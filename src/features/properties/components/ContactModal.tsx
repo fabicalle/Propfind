@@ -35,7 +35,7 @@ export function ContactModal({ property, isOpen, onClose, isAuthenticated = fals
 
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/csrf')
+      fetch('/api/csrf', { credentials: 'include' })
         .then((res) => res.json())
         .then((data) => setFormData((prev) => ({ ...prev, csrfToken: data.token })))
         .catch(() => {});
@@ -66,6 +66,7 @@ export function ContactModal({ property, isOpen, onClose, isAuthenticated = fals
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'x-csrf-token': formData.csrfToken,
