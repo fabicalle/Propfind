@@ -28,7 +28,8 @@ async function fetchUsers(): Promise<UserRecord[]> {
   if (!response.ok) {
     throw new Error('Failed to fetch users');
   }
-  return response.json();
+  const json = await response.json();
+  return json.data;
 }
 
 export function UserManagementTable() {

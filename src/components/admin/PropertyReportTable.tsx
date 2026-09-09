@@ -20,7 +20,8 @@ async function fetchReportedProperties(): Promise<ReportedProperty[]> {
   if (!response.ok) {
     throw new Error('Failed to fetch reports');
   }
-  return response.json();
+  const json = await response.json();
+  return json.data;
 }
 
 export function PropertyReportTable() {
