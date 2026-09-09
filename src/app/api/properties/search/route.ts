@@ -9,8 +9,11 @@ import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { getSessionFromRequest } from '@/lib/supabase/session';
 import { prisma } from '@/lib/prisma';
+import { env } from '@/lib/env';
+import { seedMockProperties, countMockProperties } from '@/lib/mock-data-seeder';
 
 const USE_MOCK = process.env.USE_MOCK_DATA === 'true';
+const AUTO_SEED = env.isDev && !USE_MOCK;
 
 const propertyRepository = USE_MOCK ? new MockPropertyRepository() : new PrismaPropertyRepository();
 const interactionRepository = USE_MOCK ? new MockInteractionRepository() : new PrismaInteractionRepository();
@@ -49,6 +52,17 @@ async function POST_impl(request: NextRequest) {
   if (originError) return originError;
 
   try {
+    if (AUTO_SEED) {
+      const mockCount = await countMockProperties();
+      if (mockCount === 0) {
+        try {
+          await seedMockProperties();
+        } catch (seedError) {
+          console.error('Auto-seed error:', seedError);
+        }
+      }
+    }
+
     let body: unknown = {};
     try {
       body = await request.json();
