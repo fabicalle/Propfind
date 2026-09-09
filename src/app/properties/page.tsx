@@ -366,15 +366,15 @@ function PropertiesPageInner() {
     let selectedDept: LocationDepartment | null = null;
 
     if (locationValue.provinceId) {
-      selectedProvince = getProvinceById(locationValue.provinceId);
+      selectedProvince = getProvinceById(locationValue.provinceId) ?? null;
       if (locationValue.departmentId) {
-        selectedDept = findDepartmentById(locationValue.departmentId);
+        selectedDept = findDepartmentById(locationValue.departmentId) ?? null;
         if (!selectedDept && selectedProvince) {
           selectedDept = selectedProvince.departments.find((d) => d.id === locationValue.departmentId) ?? null;
         }
       }
     } else if (locationValue.departmentId) {
-      selectedDept = findDepartmentById(locationValue.departmentId);
+      selectedDept = findDepartmentById(locationValue.departmentId) ?? null;
     }
 
     if (!selectedDept && !selectedProvince) return result;
