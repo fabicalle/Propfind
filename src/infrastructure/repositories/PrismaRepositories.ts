@@ -198,7 +198,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
 
   async findById(id: string): Promise<Property | null> {
     const property = await prisma.property.findUnique({
-      where: { id },
+      where: { id, isActive: true },
       include: { publisher: true },
     });
     if (!property) return null;

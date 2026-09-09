@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSessionFromRequest } from '@/lib/supabase/server';
+import { prisma } from '@/lib/prisma';
+import { hasPermission, Permission, type Role } from '@/lib/permissions';
 
 const protectedRoutes = ['/perfil', '/publicar', '/favoritos'];
+const adminRoutes = ['/admin'];
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
@@ -20,6 +23,8 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
 
+  const isAdminRoute = adminRoutes.some((route) => path === route || path.startsWith(`${route}/`));
+
   if (protectedRoutes.some((route) => path === route || path.startsWith(`${route}/`))) {
     try {
       const session = await getServerSessionFromRequest(request);
@@ -32,6 +37,28 @@ export async function proxy(request: NextRequest) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', path);
       return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  if (isAdminRoute) {
+    try {
+      const session = await getServerSessionFromRequest(request);
+      if (!session?.user?.id) {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+
+      const role = (user?.role as Role) || 'FINDER';
+
+      if (role !== 'ADMIN' || !hasPermission(role, Permission.DASHBOARD_ACCESS)) {
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    } catch {
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
