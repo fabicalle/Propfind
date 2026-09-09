@@ -10,7 +10,7 @@ import PropertyDetailModal from '@/components/PropertyDetailModal';
 import { FilterPanel } from '@/components/FilterPanel';
 import { LocationFilter, type LocationFilterValue } from '@/features/properties/components/LocationFilter';
 import { loadFiltersLocally } from '@/lib/persistence/filterPersistence';
-import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, DEFAULT_DEPARTMENT_ID, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
+import { getProvinceById, getProvinceBbox, findDepartmentById, LOCATIONS, ARGENTINA_BBOX, type LocationDepartment, type LocationZone } from '@/shared/data/locations';
 import { motion } from 'framer-motion';
 import { motionTokens } from '@/lib/motion/tokens';
 import { Suspense } from 'react';
@@ -148,13 +148,9 @@ function PropertiesPageInner() {
       }
     }
 
-    if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId) {
-      const defaultProvince = getProvinceById('mendoza');
-      const defaultBbox = getProvinceBbox('mendoza') ?? defaultProvince?.departments.find((d) => d.id === DEFAULT_DEPARTMENT_ID)?.bbox;
-      if (defaultBbox) {
-        return defaultBbox;
-      }
-    }
+     if (!locationValue.departmentId && !locationValue.zoneId && !locationValue.provinceId) {
+       return ARGENTINA_BBOX;
+     }
 
     return undefined;
   }, [locationValue, geoDepartmentId, geoRegion, geoLat, geoLng]);

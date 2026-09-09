@@ -49,6 +49,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'la-plata',
         name: 'La Plata',
+        bbox: { south: -34.98, west: -58.15, north: -34.88, east: -57.80 },
         zones: [
           { id: 'centro', name: 'Centro' },
           { id: 'norte', name: 'Norte' },
@@ -58,6 +59,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'mar-del-plata',
         name: 'Mar del Plata',
+        bbox: { south: -38.10, west: -58.00, north: -37.90, east: -57.30 },
         zones: [
           { id: 'centro-mdp', name: 'Centro' },
           { id: 'zona-sur', name: 'Zona Sur' },
@@ -67,6 +69,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'bahia-blanca',
         name: 'Bahía Blanca',
+        bbox: { south: -38.85, west: -62.35, north: -38.65, east: -61.95 },
         zones: [
           { id: 'centro-bb', name: 'Centro' },
           { id: 'zona-norte-bb', name: 'Zona Norte' },
@@ -75,10 +78,29 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'tigre',
         name: 'Tigre',
+        bbox: { south: -34.48, west: -58.75, north: -34.35, east: -58.45 },
         zones: [
           { id: 'centro-tigre', name: 'Centro' },
           { id: 'delta', name: 'Delta' },
         ],
+      },
+      {
+        id: 'la-matanza',
+        name: 'La Matanza',
+        bbox: { south: -34.85, west: -58.75, north: -34.65, east: -58.40 },
+        zones: [],
+      },
+      {
+        id: 'la-pampa-bsas',
+        name: 'La Pampa',
+        bbox: { south: -36.50, west: -62.00, north: -34.50, east: -58.00 },
+        zones: [],
+      },
+      {
+        id: 'general-laso',
+        name: 'General Laso',
+        bbox: { south: -34.70, west: -58.60, north: -34.55, east: -58.30 },
+        zones: [],
       },
     ],
   },
@@ -89,6 +111,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-catamarca',
         name: 'Capital',
+        bbox: { south: -29.90, west: -66.90, north: -29.75, east: -66.70 },
         zones: [
           { id: 'san-fernando', name: 'San Fernando del Valle' },
         ],
@@ -102,6 +125,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-chaco',
         name: 'Capital',
+        bbox: { south: -27.10, west: -58.90, north: -26.90, east: -58.70 },
         zones: [
           { id: 'resistencia', name: 'Resistencia' },
           { id: 'barranqueras', name: 'Barranqueras' },
@@ -116,6 +140,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'rawson',
         name: 'Rawson',
+        bbox: { south: -46.80, west: -67.90, north: -43.00, east: -65.00 },
         zones: [
           { id: 'rawson-ciudad', name: 'Rawson' },
           { id: 'puerto-madryn', name: 'Puerto Madryn' },
@@ -130,6 +155,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-cordoba',
         name: 'Capital',
+        bbox: { south: -31.50, west: -64.25, north: -31.35, east: -64.10 },
         zones: [
           { id: 'cordoba-centro', name: 'Córdoba Centro' },
           { id: 'nueva-cordoba', name: 'Nueva Córdoba' },
@@ -139,6 +165,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'villa-carlos-paz',
         name: 'Villa Carlos Paz',
+        bbox: { south: -31.48, west: -64.30, north: -31.40, east: -64.18 },
         zones: [
           { id: 'centro-vcp', name: 'Centro' },
           { id: 'zona-lago', name: 'Zona Lago' },
@@ -153,6 +180,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-corrientes',
         name: 'Capital',
+        bbox: { south: -27.50, west: -58.95, north: -27.35, east: -58.75 },
         zones: [
           { id: 'corrientes-ciudad', name: 'Corrientes' },
         ],
@@ -166,6 +194,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'parana',
         name: 'Paraná',
+        bbox: { south: -32.00, west: -60.40, north: -31.80, east: -59.90 },
         zones: [
           { id: 'parana-centro', name: 'Paraná Centro' },
           { id: 'costanera', name: 'Costanera' },
@@ -180,6 +209,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-formosa',
         name: 'Capital',
+        bbox: { south: -26.35, west: -58.25, north: -26.15, east: -58.00 },
         zones: [
           { id: 'formosa-ciudad', name: 'Formosa' },
         ],
@@ -193,6 +223,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-jujuy',
         name: 'Dr. Manuel Belgrano',
+        bbox: { south: -24.25, west: -65.40, north: -24.05, east: -65.15 },
         zones: [
           { id: 'san-salvador', name: 'San Salvador de Jujuy' },
         ],
@@ -206,6 +237,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-la-pampa',
         name: 'Capital',
+        bbox: { south: -46.50, west: -65.00, north: -45.80, east: -63.50 },
         zones: [
           { id: 'santa-rosa', name: 'Santa Rosa' },
         ],
@@ -219,6 +251,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-la-rioja',
         name: 'Capital',
+        bbox: { south: -29.45, west: -68.40, north: -29.25, east: -67.90 },
         zones: [
           { id: 'la-rioja-ciudad', name: 'La Rioja' },
         ],
@@ -318,15 +351,18 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'caba-ciudad',
         name: 'CABA',
+        bbox: { south: -34.67, west: -58.45, north: -34.55, east: -58.30 },
         zones: [
           { id: 'palermo', name: 'Palermo' },
           { id: 'recoleta', name: 'Recoleta' },
           { id: 'belgrano', name: 'Belgrano' },
-          { id: 'san-telmo', name: 'San Telmo' },
+          { id: 'san-telmo', name: 'San Telomo' },
           { id: 'microcentro-caba', name: 'Microcentro' },
           { id: 'caballito', name: 'Caballito' },
           { id: 'la-boca', name: 'La Boca' },
           { id: 'barracas', name: 'Barracas' },
+          { id: 'palermo-hollywood', name: 'Palermo Hollywood' },
+          { id: 'microcentro', name: 'Microcentro' },
         ],
       },
     ],
@@ -338,6 +374,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-misiones',
         name: 'Capital',
+        bbox: { south: -27.35, west: -55.95, north: -27.10, east: -55.60 },
         zones: [
           { id: 'posadas', name: 'Posadas' },
         ],
@@ -351,6 +388,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'confluencia',
         name: 'Confluencia',
+        bbox: { south: -40.80, west: -71.70, north: -40.60, east: -71.40 },
         zones: [
           { id: 'neuquen-ciudad', name: 'Neuquén' },
         ],
@@ -364,6 +402,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'general-roca',
         name: 'General Roca',
+        bbox: { south: -45.10, west: -68.00, north: -40.00, east: -63.00 },
         zones: [
           { id: 'bariloche', name: 'San Carlos de Bariloche' },
           { id: 'viedma', name: 'Viedma' },
@@ -378,6 +417,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-salta',
         name: 'Capital',
+        bbox: { south: -24.55, west: -65.30, north: -24.30, east: -65.00 },
         zones: [
           { id: 'salta-ciudad', name: 'Salta' },
         ],
@@ -391,6 +431,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-san-juan',
         name: 'Capital',
+        bbox: { south: -31.60, west: -69.30, north: -31.30, east: -68.90 },
         zones: [
           { id: 'san-juan-ciudad', name: 'San Juan' },
         ],
@@ -404,6 +445,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-san-luis',
         name: 'Capital',
+        bbox: { south: -33.35, west: -66.40, north: -33.20, east: -66.10 },
         zones: [
           { id: 'san-luis-ciudad', name: 'San Luis' },
         ],
@@ -417,6 +459,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'guer-aike',
         name: 'Güer Aike',
+        bbox: { south: -51.50, west: -72.50, north: -47.50, east: -67.50 },
         zones: [
           { id: 'rio-gallegos', name: 'Río Gallegos' },
           { id: 'el-calafate', name: 'El Calafate' },
@@ -431,6 +474,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'la-capital',
         name: 'La Capital',
+        bbox: { south: -31.70, west: -60.80, north: -31.50, east: -60.50 },
         zones: [
           { id: 'santa-fe-ciudad', name: 'Santa Fe' },
           { id: 'santo-tome', name: 'Santo Tomé' },
@@ -439,6 +483,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'rosario',
         name: 'Rosario',
+        bbox: { south: -31.50, west: -60.70, north: -31.30, east: -60.60 },
         zones: [
           { id: 'centro-rosario', name: 'Centro' },
           { id: 'norte-rosario', name: 'Norte' },
@@ -453,6 +498,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-santiago',
         name: 'Capital',
+        bbox: { south: -27.85, west: -64.35, north: -27.65, east: -64.10 },
         zones: [
           { id: 'santiago-ciudad', name: 'Santiago del Estero' },
         ],
@@ -466,6 +512,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'ushuaia',
         name: 'Ushuaia',
+        bbox: { south: -54.90, west: -68.40, north: -54.70, east: -68.10 },
         zones: [
           { id: 'ushuaia-ciudad', name: 'Ushuaia' },
         ],
@@ -479,6 +526,7 @@ export const LOCATIONS: LocationProvince[] = [
       {
         id: 'capital-tucuman',
         name: 'Capital',
+        bbox: { south: -26.85, west: -65.30, north: -26.70, east: -65.10 },
         zones: [
           { id: 'san-miguel', name: 'San Miguel de Tucumán' },
         ],
@@ -586,3 +634,10 @@ export function getProvinceBbox(provinceId: string): { south: number; west: numb
 
   return { south, west, north, east };
 }
+
+export const ARGENTINA_BBOX = {
+  south: -55.90,
+  west: -73.50,
+  north: -21.70,
+  east: -56.99,
+};
