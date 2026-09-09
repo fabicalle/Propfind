@@ -101,7 +101,7 @@ function PropertiesPageInner() {
       const departmentId = geoDepartmentId && geoDepartmentId !== 'all' ? geoDepartmentId : null;
       return { departmentId, zoneId: null, provinceId };
     });
-  }, [geoDepartmentId, geoRegion, locationValue]);
+  }, [geoDepartmentId, geoRegion]);
 
   const locationQuery = searchParams.get('location')?.toLowerCase() || '';
   const locationDisplay = searchParams.get('location') || '';
@@ -255,12 +255,17 @@ function PropertiesPageInner() {
   }, [loading, localFilter, viewMode]);
 
   const searchPropertiesRef = useRef<(() => void) | null>(null);
+  const lastSearchBboxRef = useRef<string | null>(null);
 
   useEffect(() => {
     searchPropertiesRef.current = searchProperties;
   }, [searchProperties]);
 
   useEffect(() => {
+    if (!searchBbox) return;
+    const bboxKey = `${searchBbox.south.toFixed(6)},${searchBbox.west.toFixed(6)},${searchBbox.north.toFixed(6)},${searchBbox.east.toFixed(6)}`;
+    if (lastSearchBboxRef.current === bboxKey) return;
+    lastSearchBboxRef.current = bboxKey;
     searchPropertiesRef.current?.();
   }, [searchBbox]);
 
