@@ -29,6 +29,8 @@ export const MOCK_PROPERTIES: Property[] = [
     isActive: true,
     createdAt: new Date(),
     publisherId: null,
+    isMock: false,
+    embedding: null,
     contactInfo: {
       name: 'Juan Pérez',
       email: 'juan.perez@example.com',
@@ -64,6 +66,8 @@ export const MOCK_PROPERTIES: Property[] = [
     isActive: true,
     createdAt: new Date(),
     publisherId: null,
+    isMock: false,
+    embedding: null,
     contactInfo: {
       name: 'María García',
       email: 'maria.garcia@example.com',

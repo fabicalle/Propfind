@@ -35,6 +35,8 @@ export interface Property {
   isActive: boolean;
   createdAt: Date;
   publisherId: string | null;
+  isMock: boolean;
+  embedding: string | null;
   contactInfo?: {
     name: string;
     email: string;

@@ -59,6 +59,8 @@ export interface CreatePropertyInput {
   amenities?: string[];
   sourceUrl?: string;
   publisherId?: string;
+  isMock?: boolean;
+  embedding?: string;
 }
 
 export interface RecordSwipeInput {

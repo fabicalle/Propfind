@@ -48,6 +48,8 @@ export class PrismaPropertyRepository implements PropertyRepository {
       isActive: (row.isActive as boolean) ?? true,
       createdAt: row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt as string),
       publisherId: (row.publisher_id as string | null) ?? null,
+      isMock: (row.isMock as boolean) ?? (row.is_mock as boolean) ?? false,
+      embedding: (row.embedding as string | null) ?? null,
     };
   }
 
@@ -232,9 +234,11 @@ export class PrismaPropertyRepository implements PropertyRepository {
         localityId: data.localityId,
         images: data.images as unknown as Prisma.InputJsonValue,
         amenities: data.amenities as unknown as Prisma.InputJsonValue,
-        sourceUrl: data.sourceUrl,
-        publisherId: data.publisherId,
-      } as unknown as Prisma.PropertyCreateInput,
+         sourceUrl: data.sourceUrl,
+         publisherId: data.publisherId,
+         isMock: data.isMock ?? false,
+         embedding: data.embedding,
+       } as unknown as Prisma.PropertyCreateInput,
     });
     return this.toProperty(property as unknown as Record<string, unknown>);
   }

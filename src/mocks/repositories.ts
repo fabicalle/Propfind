@@ -87,6 +87,8 @@ export class MockPropertyRepository implements PropertyRepository {
     amenities?: string[];
     sourceUrl?: string;
     publisherId?: string;
+    isMock?: boolean;
+    embedding?: string;
     contactInfo?: {
       name: string;
       email: string;
@@ -124,6 +126,8 @@ export class MockPropertyRepository implements PropertyRepository {
       createdAt: new Date(),
       publisherId: data.publisherId ?? null,
       contactInfo: data.contactInfo ?? null,
+      isMock: data.isMock ?? false,
+      embedding: data.embedding ?? null,
     };
 
     MOCK_PROPERTIES.push(property);
