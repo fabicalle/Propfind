@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { MockPropertyRepository } from '@/mocks/repositories';
@@ -8,6 +9,7 @@ import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { withRateLimit } from '@/lib/rateLimit';
 import { logAuthFailure } from '@/lib/security/auditLog';
+import { getCurrentUser } from '@/lib/permissions';
 
 const USE_MOCK = process.env.USE_MOCK_DATA === 'true';
 
@@ -182,6 +184,11 @@ async function PUT_impl(
     const body = await request.json();
     const validated = UpdatePropertySchema.parse(body);
 
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return errorResponse('UNAUTHORIZED', 'No autorizado', 401);
+    }
+
     const existing = await prisma.property.findUnique({
       where: { id },
       select: { publisherId: true },
@@ -198,7 +205,9 @@ async function PUT_impl(
         })
       : null;
 
-    if (!publisher || publisher.userId !== session.user.id) {
+    if (currentUser.role === 'ADMIN') {
+      // Admin can edit any property
+    } else if (!publisher || publisher.userId !== currentUser.id) {
       return errorResponse('FORBIDDEN', 'No autorizado', 403);
     }
 
@@ -235,3 +244,62 @@ async function PUT_impl(
 }
 
 export const PUT = withRateLimit(withCsrf(PUT_impl));
+
+async function DELETE_impl(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const originError = rejectInvalidOrigin(request);
+  if (originError) return originError;
+
+  try {
+    const session = await getSessionFromRequest(request);
+    if (!session?.user?.id) {
+      logAuthFailure(request, 'missing_session');
+      return errorResponse('UNAUTHORIZED', 'No autorizado', 401);
+    }
+
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return errorResponse('UNAUTHORIZED', 'No autorizado', 401);
+    }
+
+    const { id } = await params;
+
+    const existing = await prisma.property.findUnique({
+      where: { id },
+      select: { publisherId: true },
+    });
+
+    if (!existing) {
+      return errorResponse('NOT_FOUND', 'Property not found', 404);
+    }
+
+    const publisher = existing.publisherId
+      ? await prisma.publisherProfile.findUnique({
+          where: { id: existing.publisherId },
+          select: { userId: true },
+        })
+      : null;
+
+    if (currentUser.role === 'ADMIN') {
+      // Admin can delete any property
+    } else if (!publisher || publisher.userId !== currentUser.id) {
+      return errorResponse('FORBIDDEN', 'No autorizado', 403);
+    }
+
+    await prisma.property.update({
+      where: { id },
+      data: { isActive: false },
+    });
+
+    revalidatePath(`/properties/${id}`);
+    revalidatePath('/feed');
+
+    return successResponse({ id });
+  } catch (error) {
+    return errorResponse('INTERNAL_ERROR', 'Failed to delete property');
+  }
+}
+
+export const DELETE = withRateLimit(withCsrf(DELETE_impl));

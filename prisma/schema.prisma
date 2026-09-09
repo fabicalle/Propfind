@@ -16,6 +16,7 @@ model User {
   createdAt       DateTime              @default(now()) @map("created_at")
   updatedAt       DateTime?             @map("updated_at")
   consentFlags    Json                  @default("{\"analytics\": false, \"marketing\": false, \"personalization\": false}") @map("consent_flags")
+  role              user_role?             @default(FINDER)
   savedFilters    SavedFilter[]
   searchTelemetry SearchTelemetry[]
   interactions    UserInteraction[]
@@ -285,4 +286,5 @@ enum user_role {
   REALTOR
   OWNER
   DEVELOPER_B2B
+  ADMIN
 }

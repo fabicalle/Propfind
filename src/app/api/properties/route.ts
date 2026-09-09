@@ -9,6 +9,7 @@ import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { withRateLimit } from '@/lib/rateLimit';
 import { logAuthFailure } from '@/lib/security/auditLog';
+import { getCurrentUser, hasMinimumRole, getMaxActiveListings } from '@/lib/permissions';
 
 const CreatePropertySchema = z.object({
   title: z.string().min(1),
@@ -58,8 +59,27 @@ async function POST_impl(request: NextRequest) {
     const body = await request.json();
     const validated = CreatePropertySchema.parse(body);
 
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return errorResponse('UNAUTHORIZED', 'No autorizado', 401);
+    }
+
+    if (!hasMinimumRole(currentUser.role, 'OWNER')) {
+      return errorResponse('FORBIDDEN', 'No autorizado para crear propiedades', 403);
+    }
+
     if (validated.userId !== session.user.id) {
       return errorResponse('FORBIDDEN', 'No autorizado', 403);
+    }
+
+    const maxListings = getMaxActiveListings(currentUser.role);
+    if (maxListings !== null) {
+      const activeCount = await prisma.property.count({
+        where: { publisherId: validated.userId, isActive: true },
+      });
+      if (activeCount >= maxListings) {
+        return errorResponse('FORBIDDEN', `Has alcanzado el límite máximo de ${maxListings} publicaciones activas`, 403);
+      }
     }
 
     const hasPublisherProfile = await prisma.publisherProfile.findUnique({
