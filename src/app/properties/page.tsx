@@ -62,17 +62,20 @@ function PropertiesPageInner() {
       }
 
       if (departmentParam) {
-        const currentProvinceId = provinceId || 'mendoza';
-        const province = getProvinceById(currentProvinceId);
+        const currentProvinceId = provinceId;
+        const province = currentProvinceId ? getProvinceById(currentProvinceId) : LOCATIONS.find((p) => p.departments.some((d) => d.id === departmentParam));
         const found = province?.departments.find(
           (d) => d.name.toLowerCase() === departmentParam.toLowerCase()
         );
-        if (found) departmentId = found.id;
+        if (found) {
+          departmentId = found.id;
+          if (!provinceId && province) provinceId = province.id;
+        }
       }
 
       if (departmentId && zoneParam) {
-        const currentProvinceId = provinceId || 'mendoza';
-        const province = getProvinceById(currentProvinceId);
+        const currentProvinceId = provinceId;
+        const province = currentProvinceId ? getProvinceById(currentProvinceId) : (departmentId ? LOCATIONS.find((p) => p.departments.some((d) => d.id === departmentId)) : null);
         const dept = province?.departments.find((d) => d.id === departmentId);
         const foundZone = dept?.zones.find((z) => z.name.toLowerCase() === zoneParam.toLowerCase());
         if (foundZone) zoneId = foundZone.id;
@@ -524,8 +527,7 @@ function PropertiesPageInner() {
             animate={{ y: 0, opacity: 1 }}
           >
             {locationValue.departmentId && (() => {
-              const province = getProvinceById('mendoza');
-              const dept = province?.departments.find((d) => d.id === locationValue.departmentId);
+              const dept = findDepartmentById(locationValue.departmentId);
               return dept ? (
                 <span className="rounded-full bg-border-chip px-3 py-1 text-xs text-content-primary">
                   📍 {dept.name}
@@ -533,8 +535,7 @@ function PropertiesPageInner() {
               ) : null;
             })()}
             {locationValue.zoneId && (() => {
-              const province = getProvinceById('mendoza');
-              const dept = province?.departments.find((d) => d.id === locationValue.departmentId);
+              const dept = locationValue.departmentId ? findDepartmentById(locationValue.departmentId) : null;
               const zone = dept?.zones.find((z) => z.id === locationValue.zoneId);
               return zone ? (
                 <span className="rounded-full bg-border-chip px-3 py-1 text-xs text-content-primary">

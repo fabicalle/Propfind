@@ -14,6 +14,7 @@ export class MockPropertyRepository implements PropertyRepository {
     const { bbox, filters, excludeIds = [], limit, offset } = params;
 
     const results = MOCK_PROPERTIES.filter((p) => {
+      if (!p.isActive) return false;
       if (excludeIds.includes(p.id)) return false;
       if (p.lat < bbox.south || p.lat > bbox.north) return false;
       if (p.lng < bbox.west || p.lng > bbox.east) return false;
