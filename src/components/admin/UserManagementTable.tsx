@@ -93,7 +93,7 @@ export function UserManagementTable() {
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-border">
+            <tr className="border-b border-border-subtle">
             <th className="text-left py-3 px-4 font-medium">Usuario</th>
             <th className="text-left py-3 px-4 font-medium">Email</th>
             <th className="text-left py-3 px-4 font-medium">Rol Actual</th>
@@ -103,11 +103,11 @@ export function UserManagementTable() {
         </thead>
         <tbody>
           {users.map((user) => (
-            <tr key={user.id} className="border-b border-border">
+            <tr key={user.id} className="border-b border-border-subtle">
               <td className="py-3 px-4 font-mono text-sm">{user.id.slice(0, 8)}...</td>
               <td className="py-3 px-4">{user.email ?? 'Sin email'}</td>
               <td className="py-3 px-4">
-                <span className="px-2 py-1 text-xs rounded bg-surface-tertiary text-content-secondary">
+                <span className="px-2 py-1 text-xs rounded bg-surface-secondary text-content-secondary">
                   {user.role}
                 </span>
               </td>
@@ -116,7 +116,7 @@ export function UserManagementTable() {
                   value={user.role}
                   onChange={(e) => handleRoleChange(user.id, e.target.value)}
                   disabled={actionLoading === user.id}
-                  className="px-2 py-1 text-sm border border-border rounded bg-surface-secondary text-content-primary disabled:opacity-50"
+                  className="px-2 py-1 text-sm border border-border-subtle rounded bg-surface-secondary text-content-primary disabled:opacity-50"
                 >
                   {ROLES.map((role) => (
                     <option key={role.value} value={role.value}>

@@ -96,7 +96,7 @@ export function PropertyReportTable() {
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-border">
+            <tr className="border-b border-border-subtle">
             <th className="text-left py-3 px-4 font-medium">Propiedad</th>
             <th className="text-left py-3 px-4 font-medium">Reportes</th>
             <th className="text-left py-3 px-4 font-medium">Último Reporte</th>
@@ -106,7 +106,7 @@ export function PropertyReportTable() {
         </thead>
         <tbody>
           {properties.map((property) => (
-            <tr key={property.id} className="border-b border-border">
+             <tr key={property.id} className="border-b border-border-subtle">
               <td className="py-3 px-4">
                 <div className="font-medium">{property.title}</div>
               </td>
@@ -137,21 +137,21 @@ export function PropertyReportTable() {
                   <button
                     onClick={() => handleModeration(property.id, 'ACTIVATE')}
                     disabled={actionLoading === property.id}
-                    className="px-3 py-1 text-sm bg-success/10 text-success rounded hover:bg-success/20 disabled:opacity-50"
+                    className="px-3 py-1 text-sm font-semibold text-white rounded-lg bg-brand-olive shadow-sm transition-colors hover:bg-brand-olive/90 disabled:opacity-50"
                   >
                     Activar
                   </button>
                   <button
                     onClick={() => handleModeration(property.id, 'DEACTIVATE')}
                     disabled={actionLoading === property.id}
-                    className="px-3 py-1 text-sm bg-warning/10 text-warning rounded hover:bg-warning/20 disabled:opacity-50"
+                    className="px-3 py-1 text-sm font-semibold text-white rounded-lg bg-brand-terracotta shadow-sm transition-colors hover:bg-brand-terracotta/90 disabled:opacity-50"
                   >
                     Desactivar
                   </button>
                   <button
                     onClick={() => handleModeration(property.id, 'DELETE')}
                     disabled={actionLoading === property.id}
-                    className="px-3 py-1 text-sm bg-danger/10 text-danger rounded hover:bg-danger/20 disabled:opacity-50"
+                    className="px-3 py-1 text-sm font-semibold text-white rounded-lg bg-brand-clay shadow-sm transition-colors hover:bg-brand-clay/90 disabled:opacity-50"
                   >
                     Eliminar
                   </button>

@@ -12,38 +12,38 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4 border-b border-border">
+        <nav className="flex gap-2 border-b border-border-subtle mb-6">
         <button
           onClick={() => setActiveTab('moderation')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium rounded-t-lg border-b-2 transition-colors ${
             activeTab === 'moderation'
-              ? 'border-b-2 border-accent text-accent'
-              : 'text-content-secondary hover:text-content-primary'
+              ? 'border-accent text-accent'
+              : 'border-transparent text-content-secondary hover:text-content-primary hover:border-border-subtle'
           }`}
         >
           Moderación de Propiedades
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium rounded-t-lg border-b-2 transition-colors ${
             activeTab === 'users'
-              ? 'border-b-2 border-accent text-accent'
-              : 'text-content-secondary hover:text-content-primary'
+              ? 'border-accent text-accent'
+              : 'border-transparent text-content-secondary hover:text-content-primary hover:border-border-subtle'
           }`}
         >
           Gestión de Usuarios
         </button>
         <button
           onClick={() => setActiveTab('demo')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium rounded-t-lg border-b-2 transition-colors ${
             activeTab === 'demo'
-              ? 'border-b-2 border-accent text-accent'
-              : 'text-content-secondary hover:text-content-primary'
+              ? 'border-accent text-accent'
+              : 'border-transparent text-content-secondary hover:text-content-primary hover:border-border-subtle'
           }`}
         >
           Gestión de Datos Demo
         </button>
-      </div>
+      </nav>
 
       {activeTab === 'moderation' && <PropertyReportTable />}
       {activeTab === 'users' && <UserManagementTable />}
@@ -107,8 +107,10 @@ function DemoDataManager() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-surface-secondary border border-border rounded-lg p-4">
-        <h3 className="font-medium text-content-primary mb-3">Datos de Prueba Demo</h3>
+      <div className="bg-surface-secondary border border-border-subtle rounded-lg p-4">
+        <h3 className="font-display font-semibold text-content-primary mb-3">
+          Datos de Prueba Demo
+        </h3>
         {loading ? (
           <p className="text-content-secondary">Cargando...</p>
         ) : (
@@ -130,19 +132,19 @@ function DemoDataManager() {
       )}
 
       <div className="flex gap-4">
-        <button
-          onClick={handleSeed}
-          className="px-4 py-2 bg-accent text-white rounded hover:bg-accent-hover transition-colors"
-        >
-          Cargar Propiedades Demo (Nivel Nacional)
-        </button>
-        <button
-          onClick={handlePurge}
-          disabled={mockCount === 0}
-          className="px-4 py-2 bg-danger/10 text-danger rounded hover:bg-danger/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Eliminar Propiedades Demo
-        </button>
+          <button
+            onClick={handleSeed}
+            className="px-4 py-2 rounded-lg bg-brand-olive text-white text-sm font-semibold shadow-sm transition-colors hover:bg-brand-olive/90 disabled:opacity-50"
+          >
+            Cargar Propiedades Demo (Nivel Nacional)
+          </button>
+          <button
+            onClick={handlePurge}
+            disabled={mockCount === 0}
+            className="px-4 py-2 rounded-lg bg-brand-terracotta text-white text-sm font-semibold shadow-sm transition-colors hover:bg-brand-terracotta/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Eliminar Propiedades Demo
+          </button>
       </div>
     </div>
   );

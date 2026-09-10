@@ -10,7 +10,8 @@ const config: Config = {
     extend: {
       colors: {
         app: '#F4E8D4',
-        card: '#DCC9B1',
+        card: '#FFFFFF',
+        'surface-secondary': '#EAE6E1',
         border: {
           subtle: '#B6A58F',
           chip: '#B6A58F',
@@ -25,6 +26,15 @@ const config: Config = {
           clay: '#9E4242',
           mustard: '#D99B26',
         },
+        accent: '#2D5A43',
+        'accent-hover': '#1e4028',
+        danger: '#9E4242',
+        'danger-hover': '#7a3333',
+        success: '#2D5A43',
+        'success-hover': '#1e4028',
+        warning: '#D99B26',
+        'warning-hover': '#b8791c',
+        white: '#FFFFFF',
       },
       animation: {
         'slide-up': 'slideUp 0.3s ease-out',
