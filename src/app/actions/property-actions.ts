@@ -52,7 +52,6 @@ export async function reportPropertyAction(
           reason: data.reason,
           details: data.details ?? undefined,
           reporterEmail: data.reporterEmail ?? session?.user?.email ?? undefined,
-          reporter: currentUser ? { connect: { id: currentUser.id } } : undefined,
         },
       });
     } catch {
