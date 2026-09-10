@@ -1,31 +1,36 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { SearchPropertiesUseCase } from '@/application/use-cases/propertyUseCases';
 import { PrismaPropertyRepository, PrismaInteractionRepository } from '@/infrastructure/repositories/PrismaRepositories';
 import { MockPropertyRepository, MockInteractionRepository } from '@/mocks/repositories';
-import { BoundingBox, PropertySearchFilters, SearchParams } from '@/domain/value-objects';
 import { successResponse, errorResponse } from '@/lib/api/response';
 import { rejectInvalidOrigin } from '@/lib/security/origin';
 import { withCsrf } from '@/lib/security/withCsrf';
 import { getSessionFromRequest } from '@/lib/supabase/session';
 import { prisma } from '@/lib/prisma';
 import { env } from '@/lib/env';
-import { seedMockProperties, countMockProperties } from '@/lib/mock-data-seeder';
+import { seedMockProperties, countMockProperties, purgeMockProperties } from '@/lib/mock-data-seeder';
+import { headers } from 'next/headers';
 
 const USE_MOCK = process.env.USE_MOCK_DATA === 'true';
 const AUTO_SEED = env.isDev && !USE_MOCK;
+const EXPECTED_MOCK_COUNT = 26;
 
 const propertyRepository = USE_MOCK ? new MockPropertyRepository() : new PrismaPropertyRepository();
 const interactionRepository = USE_MOCK ? new MockInteractionRepository() : new PrismaInteractionRepository();
 const searchPropertiesUseCase = new SearchPropertiesUseCase(propertyRepository, interactionRepository);
 
 const searchSchema = z.object({
-  bbox: z.object({
-    south: z.number(),
-    west: z.number(),
-    north: z.number(),
-    east: z.number(),
-  }).optional(),
+  query: z.string().optional(),
+  locationQuery: z.string().optional(),
+  localityIds: z.array(z.string()).optional(),
+  lat: z.number().optional(),
+  lng: z.number().optional(),
+  radiusKm: z.number().int().positive().max(500).optional(),
+  operationType: z.enum(['RENT', 'SALE']).optional(),
+  page: z.number().int().positive().optional(),
+  limit: z.number().int().positive().max(100).optional(),
+  excludeIds: z.array(z.string()).optional(),
   filters: z.object({
     priceMin: z.number().optional(),
     priceMax: z.number().optional(),
@@ -33,6 +38,7 @@ const searchSchema = z.object({
     areaMax: z.number().optional(),
     rooms: z.array(z.number()).optional(),
     bedrooms: z.array(z.number()).optional(),
+    bathrooms: z.number().optional(),
     propertyTypes: z.array(z.string()).optional(),
     amenities: z.array(z.string()).optional(),
     listingType: z.enum(['sale', 'rent']).optional(),
@@ -42,9 +48,6 @@ const searchSchema = z.object({
     parking: z.enum(['any', '1+', '2+']).optional(),
     sellerType: z.enum(['OWNER', 'AGENCY']).optional(),
   }).optional(),
-  excludeIds: z.array(z.string()).optional(),
-  limit: z.number().int().positive().max(100).optional(),
-  offset: z.number().int().nonnegative().optional(),
 });
 
 async function POST_impl(request: NextRequest) {
@@ -53,13 +56,22 @@ async function POST_impl(request: NextRequest) {
 
   try {
     if (AUTO_SEED) {
-      const mockCount = await countMockProperties();
-      if (mockCount === 0) {
-        try {
+      const forceReseed =
+        request.nextUrl.searchParams.get('reseed') === 'true' ||
+        request.nextUrl.searchParams.get('reseed') === '1';
+      try {
+        if (forceReseed) {
+          await purgeMockProperties();
           await seedMockProperties();
-        } catch (seedError) {
-          console.error('Auto-seed error:', seedError);
+        } else {
+          const mockCount = await countMockProperties();
+          if (mockCount !== EXPECTED_MOCK_COUNT) {
+            if (mockCount > 0) await purgeMockProperties();
+            await seedMockProperties();
+          }
         }
+      } catch (seedError) {
+        console.error('Auto-seed error:', seedError);
       }
     }
 
@@ -71,30 +83,52 @@ async function POST_impl(request: NextRequest) {
     }
     const validated = searchSchema.parse(body);
 
-    const limit = validated.limit ?? 15;
-    const offset = validated.offset ?? 0;
+    const headersList = await headers();
+    const latFromHeader = parseFloat(headersList.get('x-vercel-ip-latitude') || '');
+    const lngFromHeader = parseFloat(headersList.get('x-vercel-ip-longitude') || '');
 
-    const bbox: BoundingBox = validated.bbox ?? {
-      south: -90,
-      west: -180,
-      north: 90,
-      east: 180,
-    };
+    const hasExplicitLocation = validated.lat != null && validated.lng != null;
+    const hasLocationQuery = Boolean(validated.locationQuery) || Boolean(validated.query) || (validated.localityIds && validated.localityIds.length > 0);
 
-    const filters: PropertySearchFilters = validated.filters ?? {};
-
-    const searchParams: SearchParams = {
-      bbox,
-      filters,
-      excludeIds: validated.excludeIds,
-      limit,
-      offset,
-    };
+     const params = {
+       query: validated.query,
+       locationQuery: validated.locationQuery,
+       lat: hasExplicitLocation
+         ? validated.lat
+         : !hasLocationQuery && Number.isFinite(latFromHeader)
+           ? latFromHeader
+           : undefined,
+       lng: hasExplicitLocation
+         ? validated.lng
+         : !hasLocationQuery && Number.isFinite(lngFromHeader)
+           ? lngFromHeader
+           : undefined,
+       radiusKm: validated.radiusKm ?? 50,
+       operationType: validated.operationType ?? undefined,
+       page: validated.page ?? 1,
+       limit: validated.limit ?? 15,
+       localityIds: validated.localityIds,
+       excludeIds: validated.excludeIds,
+       filters: validated.filters,
+     };
 
     const sessionId = request.headers.get('x-session-id') || undefined;
-    const properties = await searchPropertiesUseCase.execute(searchParams, sessionId);
 
-    const publisherIds = Array.from(new Set(properties.map((p) => p.publisherId).filter((id): id is string => Boolean(id))));
+    let result;
+    try {
+      result = await searchPropertiesUseCase.execute(params, sessionId);
+    } catch (searchError) {
+      if (env.isDev) {
+        console.error('DB search failed, falling back to mock:', searchError);
+        const mockRepo = new MockPropertyRepository();
+        const fallbackUseCase = new SearchPropertiesUseCase(mockRepo, new MockInteractionRepository());
+        result = await fallbackUseCase.execute(params, sessionId);
+      } else {
+        throw searchError;
+      }
+    }
+
+    const publisherIds = Array.from(new Set(result.items.map((p) => p.publisherId).filter((id): id is string => Boolean(id))));
 
     const publishers = publisherIds.length
       ? await prisma.publisherProfile.findMany({
@@ -103,12 +137,11 @@ async function POST_impl(request: NextRequest) {
         })
       : [];
 
-    const unresolvedPublisherIds = properties
+    const unresolvedPublisherIds = result.items
       .map((p) => p.publisherId)
       .filter((id): id is string => Boolean(id));
 
     const publisherIdSet = new Set(publishers.map((pub) => pub.id));
-
     const unresolvedByPublisherId = unresolvedPublisherIds.filter((id) => !publisherIdSet.has(id));
 
     if (unresolvedByPublisherId.length > 0) {
@@ -135,7 +168,7 @@ async function POST_impl(request: NextRequest) {
     const session = await getSessionFromRequest(request);
     const isAuthenticated = Boolean(session?.user?.id);
 
-    const feedProperties = properties.map((p) => {
+    const feedProperties = result.items.map((p) => {
       const publisher = publisherMap.get(p.publisherId ?? '') || publisherByUserMap.get(p.publisherId ?? '') || null;
       const user = publisher?.userId ? userMap.get(publisher.userId) : null;
       const profile = (user?.profile as Record<string, unknown> | null) ?? null;
@@ -183,7 +216,13 @@ async function POST_impl(request: NextRequest) {
       };
     });
 
-    return successResponse({ properties: feedProperties, limit, offset });
+    return successResponse({
+      properties: feedProperties,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      hasMore: result.hasMore,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return errorResponse('VALIDATION_ERROR', error.errors[0]?.message || 'Invalid input', 400);

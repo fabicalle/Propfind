@@ -1,5 +1,6 @@
 import { Property, PropertyReport } from '@/domain/entities';
 import { BoundingBox, PropertySearchFilters, CreatePropertyInput, CreatePropertyReportInput } from '@/domain/value-objects';
+import { SearchParams, PagedResult } from '@/types/search';
 
 export interface PropertyRepository {
   searchByBoundingBox(params: {
@@ -9,6 +10,8 @@ export interface PropertyRepository {
     limit: number;
     offset: number;
   }): Promise<Property[]>;
+
+  search(params: SearchParams): Promise<PagedResult<Property>>;
 
   findById(id: string): Promise<Property | null>;
   create(data: CreatePropertyInput): Promise<Property>;

@@ -1,6 +1,7 @@
 import { PropertyRepository, InteractionRepository, PropertyReportRepository } from '@/application/ports';
 import { Property, PropertyReport } from '@/domain/entities';
 import { BoundingBox, PropertySearchFilters, CreatePropertyInput, CreatePropertyReportInput } from '@/domain/value-objects';
+import { SearchParams, PagedResult } from '@/types/search';
 import { prisma } from '@/lib/prisma';
 import { PropertyType } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
@@ -60,13 +61,13 @@ export class PrismaPropertyRepository implements PropertyRepository {
     return Number(value);
   }
 
-   async searchByBoundingBox(params: {
-     bbox: BoundingBox;
-     filters: PropertySearchFilters;
-     excludeIds?: string[];
-     limit: number;
-     offset: number;
-   }): Promise<Property[]> {
+  async searchByBoundingBox(params: {
+    bbox: BoundingBox;
+    filters: PropertySearchFilters;
+    excludeIds?: string[];
+    limit: number;
+    offset: number;
+  }): Promise<Property[]> {
     const { bbox, filters, excludeIds = [], limit, offset } = params;
 
     const whereConditions: string[] = [
@@ -75,18 +76,18 @@ export class PrismaPropertyRepository implements PropertyRepository {
     ];
     const queryParams: (string | number | string[] | boolean)[] = [];
 
-     const isFullWorldBbox =
-       bbox.south <= -90 &&
-       bbox.west <= -180 &&
-       bbox.north >= 90 &&
-       bbox.east >= 180;
+    const isFullWorldBbox =
+      bbox.south <= -90 &&
+      bbox.west <= -180 &&
+      bbox.north >= 90 &&
+      bbox.east >= 180;
 
-     if (!isFullWorldBbox) {
-       queryParams.push(bbox.west, bbox.south, bbox.east, bbox.north);
-       whereConditions.push(
-         `ST_Intersects(p.geog, ST_MakeEnvelope($1, $2, $3, $4, 4326)::geography)`
-       );
-     }
+    if (!isFullWorldBbox) {
+      queryParams.push(bbox.west, bbox.south, bbox.east, bbox.north);
+      whereConditions.push(
+        `ST_Intersects(p.geog, ST_MakeEnvelope($1, $2, $3, $4, 4326)::geography)`
+      );
+    }
 
     if (filters.priceMin !== undefined) {
       queryParams.push(filters.priceMin);
@@ -234,16 +235,16 @@ export class PrismaPropertyRepository implements PropertyRepository {
         localityId: data.localityId,
         images: data.images as unknown as Prisma.InputJsonValue,
         amenities: data.amenities as unknown as Prisma.InputJsonValue,
-         sourceUrl: data.sourceUrl,
-         publisherId: data.publisherId,
-         isMock: data.isMock ?? false,
-         embedding: data.embedding,
-       } as unknown as Prisma.PropertyCreateInput,
+        sourceUrl: data.sourceUrl,
+        publisherId: data.publisherId,
+        isMock: data.isMock ?? false,
+        embedding: data.embedding,
+      } as unknown as Prisma.PropertyCreateInput,
     });
     return this.toProperty(property as unknown as Record<string, unknown>);
   }
 
-   async findFirstNotInIds(ids: string[], limit = 1): Promise<Property | null> {
+  async findFirstNotInIds(ids: string[], limit = 1): Promise<Property | null> {
     const property = await prisma.property.findFirst({
       where: {
         isActive: true,
@@ -254,6 +255,233 @@ export class PrismaPropertyRepository implements PropertyRepository {
     });
     if (!property) return null;
     return this.toProperty(property as unknown as Record<string, unknown>);
+  }
+
+  async search(params: SearchParams): Promise<PagedResult<Property>> {
+    const {
+      query = '',
+      locationQuery = '',
+      localityIds = [],
+      lat,
+      lng,
+      radiusKm = 50,
+      operationType,
+      page = 1,
+      limit = 20,
+      excludeIds = [],
+      filters,
+    } = params;
+
+    const offset = (page - 1) * limit;
+    const hasGeo = lat != null && lng != null;
+
+    let opCondition: string | null = null;
+    const effectiveListingType = operationType ?? filters?.listingType;
+    if (effectiveListingType) {
+      const dbType = effectiveListingType === 'SALE' ? 'sale' : effectiveListingType === 'RENT' ? 'rent' : effectiveListingType;
+      opCondition = `p.listing_type = '${dbType}'`;
+    }
+
+    const buildQuery = (useGeo: boolean): { whereClause: string; params: (string | number | string[] | boolean)[]; distanceExpr: string } => {
+      const conditions: string[] = ['p.is_active = true'];
+      if (opCondition) conditions.push(opCondition);
+      const queryParams: (string | number | string[] | boolean)[] = [];
+
+      const buildTextSearchCondition = (text: string) => {
+        const words = text.trim().split(/\s+/).filter((w) => w.length > 0);
+        if (words.length === 0) return null;
+
+        const fields = ['p.title', 'p.description', 'p.address', 'p.neighborhood', 'p.city', 'p.department_id'];
+        const wordConditions: string[] = [];
+
+        for (const word of words) {
+          const paramsForWord: number[] = [];
+          for (let i = 0; i < fields.length; i++) {
+            const idx = queryParams.length + 1;
+            queryParams.push(`%${word}%`);
+            paramsForWord.push(idx);
+          }
+          const fieldConditions = fields.map((_, i) => `${fields[i]} ILIKE $${paramsForWord[i]}`);
+          wordConditions.push(`(${fieldConditions.join(' OR ')})`);
+        }
+
+        return `(${wordConditions.join(' AND ')})`;
+      };
+
+      const textCond = buildTextSearchCondition(query);
+      if (textCond) conditions.push(textCond);
+
+      if (localityIds.length === 0 && locationQuery) {
+        const locCond = buildTextSearchCondition(locationQuery);
+        if (locCond) conditions.push(locCond);
+      }
+
+      // --- LEVEL 3: Locality IDs (strict geographical hierarchy) ---
+      // Uses individual IN() placeholders to avoid Postgres array parsing issues with $queryRawUnsafe
+      if (localityIds.length > 0) {
+        const placeholders = localityIds.map((id) => {
+          queryParams.push(id);
+          return `$${queryParams.length}`;
+        });
+        conditions.push(`(p.department_id IN (${placeholders.join(', ')}) OR p.locality_id IN (${placeholders.join(', ')}))`);
+      }
+
+      if (excludeIds.length > 0) {
+        const placeholders = excludeIds.map((id) => {
+          queryParams.push(id);
+          return `$${queryParams.length}`;
+        });
+        conditions.push(`p.id NOT IN (${placeholders.join(', ')})`);
+      }
+
+      if (filters?.propertyTypes?.length) {
+        const placeholders = filters.propertyTypes.map((type) => {
+          queryParams.push(type);
+          return `$${queryParams.length}`;
+        });
+        conditions.push(`p.property_type IN (${placeholders.join(', ')})`);
+      }
+
+      if (filters?.priceMin != null) {
+        const pMinIdx = queryParams.length + 1;
+        queryParams.push(filters.priceMin);
+        conditions.push(`p.price >= $${pMinIdx}`);
+      }
+
+      if (filters?.priceMax != null) {
+        const pMaxIdx = queryParams.length + 1;
+        queryParams.push(filters.priceMax);
+        conditions.push(`p.price <= $${pMaxIdx}`);
+      }
+
+      if (filters?.bedrooms?.length) {
+        const placeholders = filters.bedrooms.map((num) => {
+          queryParams.push(Number(num));
+          return `$${queryParams.length}`;
+        });
+        conditions.push(`p.bedrooms IN (${placeholders.join(', ')})`);
+      }
+
+      if (filters?.rooms?.length) {
+        const placeholders = filters.rooms.map((num) => {
+          queryParams.push(Number(num));
+          return `$${queryParams.length}`;
+        });
+        conditions.push(`p.rooms IN (${placeholders.join(', ')})`);
+      }
+
+      if (filters?.bathrooms != null) {
+        const baIdx = queryParams.length + 1;
+        queryParams.push(filters.bathrooms);
+        conditions.push(`p.bathrooms >= $${baIdx}`);
+      }
+
+      if (filters?.amenities?.length) {
+        const amIdx = queryParams.length + 1;
+        const amArr = filters.amenities;
+        queryParams.push(amArr);
+        conditions.push(`p.amenities::jsonb ?| $${amIdx}::text[]`);
+      }
+
+      if (filters?.creditApproved != null) {
+        const caIdx = queryParams.length + 1;
+        queryParams.push(filters.creditApproved);
+        conditions.push(`p.credit_approved = $${caIdx}`);
+      }
+
+      if (filters?.parking) {
+        const pkIdx = queryParams.length + 1;
+        queryParams.push(filters.parking);
+        conditions.push(`p.parking = $${pkIdx}`);
+      }
+
+      if (filters?.sellerType) {
+        const stIdx = queryParams.length + 1;
+        queryParams.push(filters.sellerType);
+        conditions.push(`p.seller_type = $${stIdx}`);
+      }
+
+      if (filters?.currency) {
+        const curIdx = queryParams.length + 1;
+        queryParams.push(filters.currency);
+        conditions.push(`p.price_currency = $${curIdx}`);
+      }
+
+      if (filters?.listingSubType) {
+        const lstIdx = queryParams.length + 1;
+        queryParams.push(filters.listingSubType);
+        conditions.push(`p.listing_sub_type = $${lstIdx}`);
+      }
+
+      let distanceExpr = '0 AS distance_km';
+
+      if (useGeo && hasGeo && Number.isFinite(lat as number) && Number.isFinite(lng as number)) {
+        const latIdx = queryParams.length + 1;
+        const lngIdx = queryParams.length + 2;
+        const radiusIdx = queryParams.length + 3;
+        queryParams.push(lat, lng, radiusKm);
+        conditions.push(
+          `(6371 * acos(cos(radians($${latIdx})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians($${lngIdx})) + sin(radians($${latIdx})) * sin(radians(p.lat)))) <= $${radiusIdx}`
+        );
+        distanceExpr = `(6371 * acos(cos(radians($${latIdx})) * cos(radians(p.lat)) * cos(radians(p.lng) - radians($${lngIdx})) + sin(radians($${latIdx})) * sin(radians(p.lat)))) AS distance_km`;
+      }
+
+      queryParams.push(limit, offset);
+
+      const whereClause = conditions.join(' AND ');
+      return { whereClause, params: queryParams, distanceExpr: distanceExpr };
+    };
+
+    const runQuery = async (useGeo: boolean) => {
+      const { whereClause, params, distanceExpr } = buildQuery(useGeo);
+
+      const countParams = params.slice(0, -2);
+
+      const countQuery = `
+        SELECT COUNT(*) as total_count
+        FROM properties p
+        WHERE ${whereClause}
+      `;
+
+      const dataQuery = `
+        SELECT
+          p.id, p.title, p.description, p.price, p.area_m2, p.total_monthly_cost, p.rooms, p.bedrooms, p.bathrooms,
+          p.property_type, p.listing_type, p.listing_sub_type, p.seller_type, p.price_currency, p.credit_approved, p.parking,
+          p.lat, p.lng, p.address, p.neighborhood, p.city, p.department_id, p.locality_id, p.images, p.amenities, p.source_url, p.source_id,
+          p.is_active, p.created_at, p.updated_at, p.publisher_id, p.is_mock, p.embedding,
+          ${distanceExpr}
+        FROM properties p
+        WHERE ${whereClause}
+        ORDER BY ${useGeo ? 'distance_km ASC' : 'p.created_at DESC'}
+        LIMIT $${params.length - 1} OFFSET $${params.length}
+      `;
+
+      const [countResult, rows] = await Promise.all([
+        prisma.$queryRawUnsafe<{ total_count: number }[]>(countQuery, ...countParams),
+        prisma.$queryRawUnsafe<Record<string, unknown>[]>(dataQuery, ...params),
+      ]);
+
+      const totalCount = Number(countResult?.[0]?.total_count ?? 0);
+      const properties = rows.map((row: Record<string, unknown>) => this.toProperty(row));
+
+      return { properties, totalCount };
+    };
+
+    let { properties, totalCount } = await runQuery(hasGeo);
+
+    if (totalCount === 0 && hasGeo) {
+      const fallback = await runQuery(false);
+      properties = fallback.properties;
+      totalCount = fallback.totalCount;
+    }
+
+    return {
+      items: properties,
+      total: totalCount,
+      page,
+      limit,
+      hasMore: page * limit < totalCount,
+    };
   }
 }
 

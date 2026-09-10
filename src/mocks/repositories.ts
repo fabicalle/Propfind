@@ -1,6 +1,7 @@
 import { Property } from '@/domain/entities';
 import { PropertyRepository, InteractionRepository } from '@/application/ports';
 import { BoundingBox, PropertySearchFilters } from '@/domain/value-objects';
+import { SearchParams, PagedResult } from '@/types/search';
 import { MOCK_PROPERTIES, getMockPropertyById } from './properties';
 
 export class MockPropertyRepository implements PropertyRepository {
@@ -133,6 +134,115 @@ export class MockPropertyRepository implements PropertyRepository {
 
     MOCK_PROPERTIES.push(property);
     return property;
+  }
+
+  async search(params: SearchParams): Promise<PagedResult<Property>> {
+    const { query = '', locationQuery = '', localityIds = [], lat, lng, radiusKm = 50, operationType, page = 1, limit = 20, excludeIds = [], filters } = params;
+
+    const offset = (page - 1) * limit;
+    const hasGeoCoords = lat != null && lng != null;
+
+    const effectiveListingType = operationType ?? filters?.listingType;
+
+    const buildTextSearchMatch = (text: string): ((p: Property) => boolean) => {
+      const words = text.trim().split(/\s+/).filter((w) => w.length > 0);
+      if (words.length === 0) return () => true;
+
+      const lowerWords = words.map((w) => w.toLowerCase());
+
+      return (p: Property) => {
+        for (const word of lowerWords) {
+          const inField = [p.title, p.description, p.neighborhood, p.city, p.address].some(
+            (field) => field?.toLowerCase().includes(word)
+          );
+          if (!inField) return false;
+        }
+        return true;
+      };
+    };
+
+    const queryMatch = query ? buildTextSearchMatch(query) : null;
+    const locationMatch = locationQuery && localityIds.length === 0 ? buildTextSearchMatch(locationQuery) : null;
+
+    const doSearch = (useGeo: boolean) => {
+      const results = MOCK_PROPERTIES.filter((p) => {
+        if (!p.isActive) return false;
+        if (excludeIds.includes(p.id)) return false;
+
+        if (effectiveListingType) {
+          const expectedType = effectiveListingType === 'SALE' ? 'sale' : effectiveListingType === 'RENT' ? 'rent' : effectiveListingType;
+          if (p.listingType !== expectedType) return false;
+        }
+
+        if (useGeo && hasGeoCoords && lat && lng) {
+          const R = 6371;
+          const dLat = ((p.lat - lat) * Math.PI) / 180;
+          const dLon = ((p.lng - lng) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((lat * Math.PI) / 180) *
+              Math.cos((p.lat * Math.PI) / 180) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          if (distance > radiusKm) return false;
+        }
+
+        if (queryMatch && !queryMatch(p)) return false;
+        if (locationMatch && !locationMatch(p)) return false;
+
+        if (localityIds.length > 0) {
+          const localitySet = new Set(localityIds);
+          if (!localitySet.has(p.departmentId ?? '')) {
+            return false;
+          }
+        }
+
+        if (filters?.propertyTypes?.length && !filters.propertyTypes.includes(p.propertyType ?? '')) return false;
+        if (filters?.priceMin != null && p.price < filters.priceMin) return false;
+        if (filters?.priceMax != null && p.price > filters.priceMax) return false;
+        if (filters?.bedrooms?.length && !(filters.bedrooms.includes(p.bedrooms ?? 0))) return false;
+        if (filters?.rooms?.length && !(filters.rooms.includes(p.rooms ?? 0))) return false;
+        if (filters?.bathrooms != null && (p.bathrooms ?? 0) < filters.bathrooms) return false;
+        if (filters?.amenities?.length && !filters.amenities.some((a) => p.amenities?.includes(a))) return false;
+        if (filters?.creditApproved != null && p.creditApproved !== filters.creditApproved) return false;
+        if (filters?.parking && p.parking !== filters.parking) return false;
+        if (filters?.sellerType && p.sellerType !== filters.sellerType) return false;
+        if (filters?.currency && p.priceCurrency !== filters.currency) return false;
+        if (filters?.listingSubType && p.listingSubType !== filters.listingSubType) return false;
+
+        return true;
+      });
+
+      const sorted = [...results].sort((a, b) => {
+        if (!hasGeoCoords || !lat || !lng) return 0;
+        const distA = Math.sqrt((a.lat - lat) ** 2 + (a.lng - lat) ** 2);
+        const distB = Math.sqrt((b.lat - lat) ** 2 + (b.lng - lat) ** 2);
+        return distA - distB;
+      });
+
+      return sorted;
+    };
+
+    let sorted = doSearch(hasGeoCoords);
+
+    if (sorted.length === 0 && hasGeoCoords) {
+      sorted = doSearch(false);
+    }
+
+    const paginated = sorted.slice(offset, offset + limit);
+
+    return {
+      items: paginated.map((p) => ({
+        ...p,
+        createdAt: new Date(p.createdAt),
+      })),
+      total: sorted.length,
+      page,
+      limit,
+      hasMore: offset + limit < sorted.length,
+    };
   }
 
   async findRecentForSession(_sessionId: string, _limit = 100): Promise<Array<{ propertyId: string }>> {

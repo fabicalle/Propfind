@@ -1,6 +1,49 @@
 import { Property } from '@/domain/entities';
 
-const MOCK_UNSPLASH = 'https://images.unsplash.com';
+const IMAGE_HOUSE_1 = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+const IMAGE_HOUSE_2 = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+
+const IMAGE_APARTMENT_1 = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
+const IMAGE_APARTMENT_2 = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80';
+const IMAGE_APARTMENT_3 = 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80';
+
+const IMAGE_INTERIOR_1 = 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80';
+const IMAGE_INTERIOR_2 = 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1200&q=80';
+
+function houseImages(alt1: string, alt2: string = 'Interior') {
+  return [
+    { url: IMAGE_HOUSE_1, width: 1200, height: 800, alt: alt1 },
+    { url: IMAGE_INTERIOR_1, width: 1200, height: 800, alt: alt2 },
+  ];
+}
+
+function houseImages2(alt1: string, alt2: string = 'Interior') {
+  return [
+    { url: IMAGE_HOUSE_2, width: 1200, height: 800, alt: alt1 },
+    { url: IMAGE_INTERIOR_2, width: 1200, height: 800, alt: alt2 },
+  ];
+}
+
+function apartmentImages(alt1: string, alt2: string = 'Interior') {
+  return [
+    { url: IMAGE_APARTMENT_1, width: 1200, height: 800, alt: alt1 },
+    { url: IMAGE_INTERIOR_1, width: 1200, height: 800, alt: alt2 },
+  ];
+}
+
+function apartmentImages2(alt1: string, alt2: string = 'Interior') {
+  return [
+    { url: IMAGE_APARTMENT_2, width: 1200, height: 800, alt: alt1 },
+    { url: IMAGE_INTERIOR_2, width: 1200, height: 800, alt: alt2 },
+  ];
+}
+
+function apartmentImages3(alt1: string, alt2: string = 'Interior') {
+  return [
+    { url: IMAGE_APARTMENT_3, width: 1200, height: 800, alt: alt1 },
+    { url: IMAGE_INTERIOR_1, width: 1200, height: 800, alt: alt2 },
+  ];
+}
 
 const CONTACT_INFO = {
   name: 'PropFind',
@@ -34,8 +77,9 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Mendoza',
     departmentId: 'capital',
     localityId: 'microcentro',
-    images: [],
-    amenities: ['pool', 'garage'],
+    images: houseImages('Casa en Mendoza', 'Cocina'),
+  amenities: ['Parrilla', 'Jardín', 'Garage', 'Calefacción', 'WiFi', 'Terraza'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -68,8 +112,9 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Mendoza',
     departmentId: 'capital',
     localityId: 'microcentro',
-    images: [],
-    amenities: ['gym'],
+    images: apartmentImages('Depto en Godoy Cruz', 'Living'),
+  amenities: ['Parrilla', 'Balcón', 'Piscina', 'Gimnasio', 'Estacionamiento', 'WiFi'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -103,9 +148,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Buenos Aires',
     departmentId: 'caba-ciudad',
     localityId: 'palermo',
-    images: [
-      { url: `${MOCK_UNSPLASH}/photo2.jpg`, width: 800, height: 600, alt: 'Balcón con vista' },
-    ],
+    images: apartmentImages('Living con parrilla'),
     amenities: ['Apto mascotas', 'Balcón', 'Parrilla', 'Home office', 'Gimnasio', 'Estacionamiento'],
     sourceUrl: null,
     isActive: true,
@@ -139,9 +182,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Buenos Aires',
     departmentId: 'caba-ciudad',
     localityId: 'recoleta',
-    images: [
-      { url: `${MOCK_UNSPLASH}/recoleta-house2.jpg`, width: 800, height: 600, alt: 'Jardín' },
-    ],
+    images: houseImages2('Fachada', 'Jardín'),
     amenities: ['Jardín', 'Garage 2 autos', 'Cocina integral', 'Seguridad', 'Terraza', 'Patio'],
     sourceUrl: null,
     isActive: true,
@@ -175,8 +216,9 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Buenos Aires',
     departmentId: 'caba-ciudad',
     localityId: 'belgrano',
-    images: [],
-    amenities: ['Bodegón', 'Balcón con parrilla', 'Home office', 'Gimnasio', 'Piscina', 'Sum', 'Seguridad 24/7'],
+    images: apartmentImages2('Departamento con bodegón', 'Cocina'),
+  amenities: ['Bodegón', 'Balcón', 'Parrilla', 'Home office', 'Estacionamiento', 'Seguridad'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -209,8 +251,9 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Buenos Aires',
     departmentId: 'caba-ciudad',
     localityId: 'san-telmo',
-    images: [],
-    amenities: ['Parquet original', 'Parrilla', 'Seguridad', 'Balcón', 'Apto mascotas'],
+    images: apartmentImages3('Depto reformado en San Telmo', 'Parquet original'),
+  amenities: ['Parquet original', 'Parrilla', 'Seguridad', 'Balcón', 'Apto mascotas', 'Home office'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -243,8 +286,9 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Buenos Aires',
     departmentId: 'caba-ciudad',
     localityId: 'microcentro-caba',
-    images: [],
-    amenities: ['Piscina', 'Gimnasio', 'Parrilla', 'Balcón', 'Vistas a la plaza'],
+    images: apartmentImages('Depto con vista a la plaza', 'Baño con amueblado'),
+  amenities: ['Piscina', 'Gimnasio', 'Parrilla', 'Balcón', 'Vistas a la plaza', 'WiFi'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -277,8 +321,9 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Buenos Aires',
     departmentId: 'caba-ciudad',
     localityId: 'palermo',
-    images: [],
-    amenities: ['Patio privado', 'Parrilla', 'Cocina integral', 'Balcón'],
+    images: apartmentImages2('Depto con patio privado', 'Cocina abierta'),
+  amenities: ['Patio privado', 'Parrilla', 'Cocina integral', 'Balcón', 'Isla', 'Ducha'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -312,9 +357,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Córdoba',
     departmentId: 'capital-cordoba',
     localityId: 'nueva-cordoba',
-    images: [
-      { url: `${MOCK_UNSPLASH}/cordoba-apt1.jpg`, width: 800, height: 600, alt: 'Living' },
-    ],
+    images: apartmentImages('Living de departamento', 'Cocina'),
     amenities: ['Patio', 'Cocina completa', 'Lavadero', 'Estacionamiento', 'WiFi'],
     sourceUrl: null,
     isActive: true,
@@ -347,9 +390,7 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Lago del Cerro',
     city: 'Carlos Paz',
     departmentId: 'villa-carlos-paz',
-    images: [
-      { url: `${MOCK_UNSPLASH}/carlos-paz1.jpg`, width: 800, height: 600, alt: 'Fachada' },
-    ],
+    images: houseImages('Casa con vista al lago', 'Patio con parrilla'),
     amenities: ['Lago', 'Pileta privada', 'Parrilla', 'Cancha de fútbol', 'Alarma', 'Playa privada'],
     sourceUrl: null,
     isActive: true,
@@ -383,9 +424,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Córdoba',
     departmentId: 'capital-cordoba',
     localityId: 'cordoba-centro',
-    images: [
-      { url: `${MOCK_UNSPLASH}/cordoba-centro1.jpg`, width: 800, height: 600, alt: 'Depto en centro' },
-    ],
+    images: apartmentImages3('Depto en centro de Córdoba', 'Living comedor'),
     amenities: ['Parrilla', 'Balcón', 'Cocina completa', 'Patio compartido'],
     sourceUrl: null,
     isActive: true,
@@ -419,9 +458,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'La Cumbre',
     departmentId: 'la-cumbre',
     localityId: 'centro-lc',
-    images: [
-      { url: `${MOCK_UNSPLASH}/la-cumbre1.jpg`, width: 800, height: 600, alt: 'Fachada de casa' },
-    ],
+    images: houseImages2('Casa en La Cumbre', 'Patio con parrilla'),
     amenities: ['Cochera', 'Parrilla', 'Jardín', 'Apto mascotas', 'Cocina integral'],
     sourceUrl: null,
     isActive: true,
@@ -455,9 +492,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Río Cuarto',
     departmentId: 'rio-cuarto',
     localityId: 'centro-rc',
-    images: [
-      { url: `${MOCK_UNSPLASH}/rio-cuarto1.jpg`, width: 800, height: 600, alt: 'Depto con vista' },
-    ],
+    images: apartmentImages2('Depto en Río Cuarto', 'Cocina'),
     amenities: ['Estacionamiento', 'Gimnasio', 'Cerro vista', 'Cocina completa'],
     sourceUrl: null,
     isActive: true,
@@ -492,9 +527,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Mendoza',
     departmentId: 'capital',
     localityId: 'microcentro',
-    images: [
-      { url: `${MOCK_UNSPLASH}/mendoza-apt1.jpg`, width: 800, height: 600, alt: 'Living con vista' },
-    ],
+    images: apartmentImages3('Depto con vista al cerro', 'Living con parrilla'),
     amenities: ['Vista cerro', 'Parrilla', 'Apto mascotas', 'Cocina a medida', 'Balcón', 'Bodegón'],
     sourceUrl: null,
     isActive: true,
@@ -528,7 +561,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Mendoza',
     departmentId: 'lujan-de-cuyo',
     localityId: 'chacras-de-coria',
-    images: [],
+    images: houseImages('Casa en Chacras de Coria', 'Bodega'),
     amenities: ['Viñedos', 'Bodega', 'Parrilla', 'Jardín', 'Apto para perros', 'Cercado'],
     sourceUrl: null,
     isActive: true,
@@ -562,8 +595,9 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Centro',
     city: 'Rosario',
     departmentId: 'rosario',
-    images: [],
-    amenities: ['Parrilla', 'Electrodomésticos', 'Balcón', 'Sonido integrado', 'Gimnasio', 'Estacionamiento'],
+    images: apartmentImages('Depto en Rosario', 'Living'),
+  amenities: ['Parrilla', 'Balcón', 'Electrodomésticos', 'Sonido integrado', 'Gimnasio', 'Estacionamiento'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -595,8 +629,9 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Centro',
     city: 'Santa Fe',
     departmentId: 'la-capital',
-    images: [],
-    amenities: ['Parrilla', 'Balcón', 'Cocina completa', 'Cercanía Universidad'],
+    images: apartmentImages2('Depto en Santa Fe', 'Cocina'),
+  amenities: ['Parrilla', 'Balcón', 'Cocina completa', 'Cercanía Universidad', 'WiFi', 'Lavadero'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -628,8 +663,9 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Barrio Nuevo',
     city: 'Reconquista',
     departmentId: 'reconquista',
-    images: [],
-    amenities: ['Pileta privada', 'Parrilla', 'Jardín', 'Garage 2 autos', 'Apto mascotas'],
+    images: houseImages2('Casa con pileta en Reconquista', 'Patio'),
+  amenities: ['Pileta privada', 'Parrilla', 'Jardín', 'Garage 2 autos', 'Apto mascotas', 'Riego automático'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -662,8 +698,9 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Centro',
     city: 'La Plata',
     departmentId: 'la-plata',
-    images: [],
-    amenities: ['A pasos Universidad', 'Parrilla', 'Cocina completa', 'Balcón', 'WiFi'],
+    images: apartmentImages('Depto en La Plata', 'Living'),
+  amenities: ['A pasos Universidad', 'Parrilla', 'Cocina completa', 'Balcón', 'WiFi', 'Estacionamiento'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -695,8 +732,9 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Centro',
     city: 'Tigre',
     departmentId: 'tigre',
-    images: [],
-    amenities: ['Cobertura', 'Parrilla', 'Cocina integral', 'Bodega', 'Garage', 'Río cercano'],
+    images: houseImages('Casa con cobertura en Tigre', 'Cocina integral'),
+  amenities: ['Cobertura', 'Parrilla', 'Cocina integral', 'Bodega', 'Garage', 'Jardín'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -728,8 +766,9 @@ export const MOCK_PROPERTIES: Property[] = [
     neighborhood: 'Apto playa',
     city: 'Pinamar',
     departmentId: 'pinamar',
-    images: [],
-    amenities: ['Playa a 5 cuadras', 'Parrilla', 'Jardín', 'Cochera', 'Apto mascotas'],
+    images: houseImages2('Cabaña en Pinamar', 'Jardín'),
+  amenities: ['Playa a 5 cuadras', 'Parrilla', 'Jardín', 'Cochera', 'Apto mascotas', 'Balcón'],
+
     sourceUrl: null,
     isActive: true,
     createdAt: new Date('2025-01-01T00:00:00Z'),
@@ -763,9 +802,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Bariloche',
     departmentId: 'general-roca',
     localityId: 'bariloche',
-    images: [
-      { url: `${MOCK_UNSPLASH}/bariloche1.jpg`, width: 800, height: 600, alt: 'Cabaña con vista' },
-    ],
+    images: houseImages('Cabaña de lujo en Bariloche', 'Chimenea'),
     amenities: ['Lago', 'Chimenea', 'Parrilla', 'Sauna', 'Terraza', 'Apto para perros'],
     sourceUrl: null,
     isActive: true,
@@ -800,9 +837,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Salta',
     departmentId: 'capital-salta',
     localityId: 'salta-ciudad',
-    images: [
-      { url: `${MOCK_UNSPLASH}/salta-apt1.jpg`, width: 800, height: 600, alt: 'Patio interior' },
-    ],
+    images: apartmentImages3('Depto colonial en Salta', 'Patio interior'),
     amenities: ['Edificio colonial', 'Patio interior', 'Techos altos', 'Cocina moderna', 'Apto mascotas'],
     sourceUrl: null,
     isActive: true,
@@ -837,9 +872,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Mar del Plata',
     departmentId: 'mar-del-plata',
     localityId: 'centro-mdp',
-    images: [
-      { url: `${MOCK_UNSPLASH}/mdp-apt1.jpg`, width: 800, height: 600, alt: 'Vista al mar' },
-    ],
+    images: apartmentImages2('Depto frente a mar en Mar del Plata', 'Living'),
     amenities: ['Frente al mar', 'Piscina', 'Gimnasio', 'Sauna', 'Parilla', 'Balcón', 'WiFi', 'TV'],
     sourceUrl: null,
     isActive: true,
@@ -874,9 +907,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Neuquén',
     departmentId: 'confluencia',
     localityId: 'neuquen-ciudad',
-    images: [
-      { url: `${MOCK_UNSPLASH}/neuquen-loft1.jpg`, width: 800, height: 600, alt: 'Living con parrilla' },
-    ],
+    images: apartmentImages('Loft en Neuquén', 'Cocina abierta'),
     amenities: ['Loft', 'Techos altos', 'Parrilla', 'Estufa leña', 'Apto mascotas', 'Cercanía a skis'],
     sourceUrl: null,
     isActive: true,
@@ -911,9 +942,7 @@ export const MOCK_PROPERTIES: Property[] = [
     city: 'Ushuaia',
     departmentId: 'ushuaia',
     localityId: 'ushuaia-ciudad',
-    images: [
-      { url: `${MOCK_UNSPLASH}/ushuaia1.jpg`, width: 800, height: 600, alt: 'Casa con vista al lago' },
-    ],
+    images: houseImages2('Casa con cobertura en Ushuaia', 'Patio'),
     amenities: ['Cobertura', 'Parrilla', 'Calefacción', 'Garage', 'Jardín', 'Apto frío'],
     sourceUrl: null,
     isActive: true,

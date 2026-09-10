@@ -17,14 +17,16 @@ model User {
   updatedAt       DateTime?             @map("updated_at")
   consentFlags    Json                  @default("{\"analytics\": false, \"marketing\": false, \"personalization\": false}") @map("consent_flags")
   role              user_role?             @default(FINDER)
-  savedFilters    SavedFilter[]
-  searchTelemetry SearchTelemetry[]
-  interactions    UserInteraction[]
-  savedProperties UserSavedProperties[]
+   savedFilters    SavedFilter[]
+   searchTelemetry SearchTelemetry[]
+   interactions    UserInteraction[]
+   savedProperties UserSavedProperties[]
+   publisherProfile PublisherProfile?
+   reports         PropertyReport[]
 
-  @@index([email])
-  @@index([authProvider, authProviderId])
-  @@map("users")
+   @@index([email])
+   @@index([authProvider, authProviderId])
+   @@map("users")
 }
 
 model Property {
@@ -69,28 +71,30 @@ model Property {
    isMock           Boolean                   @default(false) @map("is_mock")
    embedding        String?                   @map("embedding")
 
-  @@index([geoHash])
-  @@index([price])
-  @@index([totalMonthlyCost])
-  @@index([isActive])
-  @@index([propertyType, listingType])
-  @@index([listingSubType])
-  @@index([neighborhood])
-  @@index([createdAt])
-  @@map("properties")
+   @@index([geoHash])
+   @@index([price])
+   @@index([totalMonthlyCost])
+   @@index([isActive])
+   @@index([propertyType, listingType])
+   @@index([listingSubType])
+   @@index([neighborhood])
+   @@index([createdAt])
+   @@index([isActive, propertyType, listingType])
+   @@map("properties")
 }
 
 model PublisherProfile {
-  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId        String     @unique @map("user_id") @db.Uuid
-  companyName   String?    @map("company_name") @db.VarChar(255)
-  licenseNumber String?    @map("license_number") @db.VarChar(100)
-  phone         String?    @db.VarChar(50)
-  verified      Boolean?   @default(false)
-  createdAt     DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
-  properties    Property[]
+   id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+   userId        String     @unique @map("user_id") @db.Uuid
+   companyName   String?    @map("company_name") @db.VarChar(255)
+   licenseNumber String?    @map("license_number") @db.VarChar(100)
+   phone         String?    @db.VarChar(50)
+   verified      Boolean?   @default(false)
+   createdAt     DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+   properties    Property[]
+   user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("publisher_profiles")
+   @@map("publisher_profiles")
 }
 
 model UserInteraction {
@@ -210,16 +214,19 @@ model ContactMessage {
 }
 
 model PropertyReport {
-  id            String       @id @default(uuid())
-  propertyId    String       @map("property_id")
-  reason        ReportReason @default(OTHER)
-  details       String?
-  reporterEmail String?      @map("reporter_email")
-  createdAt     DateTime     @default(now()) @map("created_at")
-  property      Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+   id            String       @id @default(uuid())
+   propertyId    String       @map("property_id")
+   reason        ReportReason @default(OTHER)
+   details       String?
+   reporterEmail String?      @map("reporter_email")
+   reporterId    String?      @map("reporter_id") @db.Uuid
+   createdAt     DateTime     @default(now()) @map("created_at")
+   property      Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+   reporter      User?        @relation(fields: [reporterId], references: [id], onDelete: SetNull)
 
-  @@index([propertyId])
-  @@map("property_reports")
+   @@index([propertyId])
+   @@unique([propertyId, reporterEmail])
+   @@map("property_reports")
 }
 
 enum AuthProvider {

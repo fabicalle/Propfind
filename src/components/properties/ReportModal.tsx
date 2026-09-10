@@ -69,7 +69,7 @@ export function ReportModal({ propertyId, isOpen, onClose }: ReportModalProps) {
             <form action={formAction} className="mt-4 space-y-4">
               <input type="hidden" name="propertyId" value={propertyId} />
 
-              {state?.error && (
+              {state && !state.success && state.error && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}

@@ -1,6 +1,7 @@
 import { PropertyRepository, InteractionRepository } from '@/application/ports';
 import { Property } from '@/domain/entities';
-import { SearchParams, RecordSwipeInput } from '@/domain/value-objects';
+import { RecordSwipeInput } from '@/domain/value-objects';
+import { SearchParams as NewSearchParams, PagedResult } from '@/types/search';
 
 export class SearchPropertiesUseCase {
   constructor(
@@ -8,23 +9,20 @@ export class SearchPropertiesUseCase {
     private interactionRepository: InteractionRepository
   ) {}
 
-  async execute(params: SearchParams, sessionId?: string): Promise<Property[]> {
-    const { bbox, filters, excludeIds = [], limit = 10, offset = 0 } = params;
+  async execute(params: NewSearchParams, sessionId?: string): Promise<PagedResult<Property>> {
+     const { excludeIds = [] } = params;
 
-    let finalExcludeIds = [...excludeIds];
+    let finalParams: NewSearchParams = { ...params };
 
     if (sessionId) {
       const recentInteractions = await this.interactionRepository.findRecentBySession(sessionId, 100);
-      finalExcludeIds = [...new Set([...finalExcludeIds, ...recentInteractions.map((i) => i.propertyId)])];
+      finalParams = {
+        ...params,
+        excludeIds: [...new Set([...excludeIds, ...recentInteractions.map((i) => i.propertyId)])],
+      };
     }
 
-    return this.propertyRepository.searchByBoundingBox({
-      bbox,
-      filters,
-      excludeIds: finalExcludeIds,
-      limit,
-      offset,
-    });
+    return this.propertyRepository.search(finalParams);
   }
 }
 

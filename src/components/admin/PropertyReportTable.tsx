@@ -68,7 +68,7 @@ export function PropertyReportTable() {
       formData.set('action', action);
 
       const result = await moderatePropertyAction(undefined, formData);
-      if (result.error) {
+      if (!result.success) {
         setError(result.error);
       } else {
         loadReports();

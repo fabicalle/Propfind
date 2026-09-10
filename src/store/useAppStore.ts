@@ -49,7 +49,7 @@ export interface Property {
   extendedFeatures?: string[];
 }
 
-export interface FilterCriteria extends PropertySearchFilters {}
+export type FilterCriteria = PropertySearchFilters;
 
 export interface SavedFilter {
   id: string;

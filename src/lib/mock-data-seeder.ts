@@ -29,11 +29,19 @@ interface MockPropertyData {
   address?: string;
   neighborhood?: string;
   city?: string;
+  departmentId?: string;
+  localityId?: string;
   amenities?: string[];
   images?: Array<{ url: string; width: number; height: number; alt?: string }>;
 }
 
-const MOCK_UNSPLASH = 'https://images.unsplash.com';
+const HD_HOUSE_EXTERIOR = 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80';
+const HD_HOUSE_INTERIOR = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80';
+const HD_APT_LIVING = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
+const HD_APT_MODERN = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80';
+const HD_APT_LOFT = 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1200&q=80';
+const HD_INTERIOR = 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80';
+const HD_BALCONY = 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=1200&q=80';
 
 const MOCK_PROPERTIES: MockPropertyData[] = [
   // CABA / GBA
@@ -55,9 +63,11 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Palermo Hollywood',
     city: 'Buenos Aires',
     amenities: ['Apto mascotas', 'Balcón', 'Parrilla', 'Home office', 'Gimnasio', 'Estacionamiento'],
+    departmentId: 'caba-ciudad',
+    localityId: 'palermo-hollywood',
     images: [
-      { url: `${MOCK_UNSPLASH}/photo1.jpg`, width: 800, height: 600, alt: 'Living con parrilla' },
-      { url: `${MOCK_UNSPLASH}/photo2.jpg`, width: 800, height: 600, alt: 'Balcón con vista' },
+      { url: HD_APT_LIVING, width: 1200, height: 800, alt: 'Living con parrilla' },
+      { url: HD_INTERIOR, width: 1200, height: 800, alt: 'Balcón con vista' },
     ],
   },
   {
@@ -78,9 +88,11 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Recoleta',
     city: 'Buenos Aires',
     amenities: ['Jardín', 'Garage 2 autos', 'Cocina integral', 'Seguridad', 'Terraza', 'Patio'],
+    departmentId: 'caba-ciudad',
+    localityId: 'recoleta',
     images: [
-      { url: `${MOCK_UNSPLASH}/recoleta-house1.jpg`, width: 800, height: 600, alt: 'Fachada' },
-      { url: `${MOCK_UNSPLASH}/recoleta-house2.jpg`, width: 800, height: 600, alt: 'Jardín' },
+      { url: HD_HOUSE_EXTERIOR, width: 1200, height: 800, alt: 'Fachada' },
+      { url: HD_BALCONY, width: 1200, height: 800, alt: 'Jardín' },
     ],
   },
   {
@@ -101,8 +113,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Belgrano',
     city: 'Buenos Aires',
     amenities: ['Bodegón', 'Balcón con parrilla', 'Home office', 'Gimnasio', 'Piscina', 'Sum', 'Seguridad 24/7'],
+    departmentId: 'caba-ciudad',
+    localityId: 'belgrano',
     images: [
-      { url: `${MOCK_UNSPLASH}/belgrano-apt1.jpg`, width: 800, height: 600, alt: 'Living' },
+      { url: HD_APT_MODERN, width: 1200, height: 800, alt: 'Living' },
     ],
   },
   // Córdoba
@@ -124,8 +138,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Nueva Córdoba',
     city: 'Córdoba',
     amenities: ['Patio', 'Cocina completa', 'Lavadero', 'Estacionamiento', 'WiFi'],
+    departmentId: 'capital-cordoba',
+    localityId: 'nueva-cordoba',
     images: [
-      { url: `${MOCK_UNSPLASH}/cordoba-apt1.jpg`, width: 800, height: 600, alt: 'Living' },
+      { url: HD_APT_LOFT, width: 1200, height: 800, alt: 'Living' },
     ],
   },
   {
@@ -146,12 +162,39 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Lago del Cerro',
     city: 'Carlos Paz',
     amenities: ['Lago', 'Pileta privada', 'Parrilla', 'Cancha de fútbol', 'Alarma', 'Playa privada'],
+    departmentId: 'villa-carlos-paz',
+    localityId: 'centro-vcp',
     images: [
-      { url: `${MOCK_UNSPLASH}/carlos-paz1.jpg`, width: 800, height: 600, alt: 'Fachada' },
+      { url: HD_HOUSE_EXTERIOR, width: 1200, height: 800, alt: 'Fachada' },
     ],
   },
-  // Mendoza
-  {
+   // Mendoza
+   {
+    title: '[DEMO] Casa en Mendoza',
+    description: 'Hermosa casa',
+    price: 150000,
+    priceCurrency: 'USD',
+    totalMonthlyCost: undefined,
+    areaM2: 120,
+    rooms: 4,
+    bedrooms: 2,
+    bathrooms: 2,
+    propertyType: 'house',
+    listingType: 'sale',
+    lat: -32.8895,
+    lng: -68.8458,
+    address: 'Calle 1',
+    neighborhood: 'Centro',
+    city: 'Mendoza',
+    amenities: ['Parrilla', 'Jardín', 'Garage', 'Calefacción', 'WiFi', 'Terraza'],
+    departmentId: 'capital',
+    localityId: 'microcentro',
+    images: [
+      { url: HD_HOUSE_EXTERIOR, width: 1200, height: 800, alt: 'Casa en Mendoza' },
+      { url: HD_INTERIOR, width: 1200, height: 800, alt: 'Cocina' },
+    ],
+  },
+   {
     title: '[DEMO] Departamento con vista al cerro en el centro de Mendoza',
     description: 'Depto reciclado con vista al cerro de la Glorieta, living-comedor con parrilla, cocina a medida con bajo elaborado, balcón, apto para mascotas. A 2 cuadras de la Plaza Independencia.',
     price: 120000,
@@ -169,8 +212,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Mendoza',
     amenities: ['Vista cerro', 'Parrilla', 'Apto mascotas', 'Cocina a medida', 'Balcón', 'Bodegón'],
+    departmentId: 'capital',
+    localityId: 'microcentro',
     images: [
-      { url: `${MOCK_UNSPLASH}/mendoza-apt1.jpg`, width: 800, height: 600, alt: 'Living con vista' },
+      { url: HD_BALCONY, width: 1200, height: 800, alt: 'Living con vista' },
     ],
   },
   {
@@ -191,8 +236,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Chacras de Coria',
     city: 'Mendoza',
     amenities: ['Viñedos', 'Bodega', 'Parrilla', 'Jardín', 'Apto para perros', 'Cercado'],
+    departmentId: 'lujan-de-cuyo',
+    localityId: 'chacras-de-coria',
     images: [
-      { url: `${MOCK_UNSPLASH}/chacras1.jpg`, width: 800, height: 600, alt: 'Fachada con viñedos' },
+      { url: HD_HOUSE_INTERIOR, width: 1200, height: 800, alt: 'Fachada con viñedos' },
     ],
   },
   {
@@ -213,8 +260,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Godoy Cruz',
     amenities: ['Cochera', 'Gimnasio', 'Piscina', 'Seguridad 24/7', 'Salón de eventos', 'Cafetería'],
+    departmentId: 'godoy-cruz',
+    localityId: 'centro-gc',
     images: [
-      { url: `${MOCK_UNSPLASH}/godoy-cruz1.jpg`, width: 800, height: 600, alt: 'Edificio' },
+      { url: HD_APT_MODERN, width: 1200, height: 800, alt: 'Edificio' },
     ],
   },
   // Santa Fe
@@ -236,8 +285,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Rosario',
     amenities: ['Parrilla', 'Electrodomésticos', 'Balcón', 'Sonido integrado', 'Gimnasio', 'Estacionamiento'],
+    departmentId: 'rosario',
+    localityId: 'centro-rosario',
     images: [
-      { url: `${MOCK_UNSPLASH}/rosario-apt1.jpg`, width: 800, height: 600, alt: 'Living' },
+      { url: HD_APT_LOFT, width: 1200, height: 800, alt: 'Living' },
     ],
   },
   // Turísticos / Regionales
@@ -258,8 +309,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Lago Nahuelito',
     city: 'Bariloche',
     amenities: ['Lago', 'Chimenea', 'Parrilla', 'Sauna', 'Terraza', 'Apto para perros'],
+    departmentId: 'general-roca',
+    localityId: 'bariloche',
     images: [
-      { url: `${MOCK_UNSPLASH}/bariloche1.jpg`, width: 800, height: 600, alt: 'Cabaña con vista' },
+      { url: HD_HOUSE_EXTERIOR, width: 1200, height: 800, alt: 'Cabaña con vista' },
     ],
   },
   {
@@ -280,8 +333,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro Histórico',
     city: 'Salta',
     amenities: ['Edificio colonial', 'Patio interior', 'Techos altos', 'Cocina moderna', 'Apto mascotas'],
+    departmentId: 'capital-salta',
+    localityId: 'salta-ciudad',
     images: [
-      { url: `${MOCK_UNSPLASH}/salta-apt1.jpg`, width: 800, height: 600, alt: 'Patio interior' },
+      { url: HD_APT_MODERN, width: 1200, height: 800, alt: 'Patio interior' },
     ],
   },
   {
@@ -303,8 +358,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Mar del Plata',
     amenities: ['Frente al mar', 'Piscina', 'Gimnasio', 'Sauna', 'Parilla', 'Balcón', 'WiFi', 'TV'],
+    departmentId: 'mar-del-plata',
+    localityId: 'centro-mdp',
     images: [
-      { url: `${MOCK_UNSPLASH}/mdp-apt1.jpg`, width: 800, height: 600, alt: 'Vista al mar' },
+      { url: HD_INTERIOR, width: 1200, height: 800, alt: 'Vista al mar' },
     ],
   },
   {
@@ -325,8 +382,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'B° Arrayanes',
     city: 'Neuquén',
     amenities: ['Loft', 'Techos altos', 'Parrilla', 'Estufa leña', 'Apto mascotas', 'Cercanía a skis'],
+    departmentId: 'confluencia',
+    localityId: 'neuquen-ciudad',
     images: [
-      { url: `${MOCK_UNSPLASH}/neuquen-loft1.jpg`, width: 800, height: 600, alt: 'Living con parrilla' },
+      { url: HD_APT_LOFT, width: 1200, height: 800, alt: 'Living con parrilla' },
     ],
   },
   {
@@ -347,8 +406,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Lago Argentino',
     city: 'Ushuaia',
     amenities: ['Cobertura', 'Parrilla', 'Calefacción', 'Garage', 'Jardín', 'Apto frío'],
+    departmentId: 'ushuaia',
+    localityId: 'ushuaia-ciudad',
     images: [
-      { url: `${MOCK_UNSPLASH}/ushuaia1.jpg`, width: 800, height: 600, alt: 'Casa con vista al lago' },
+      { url: HD_HOUSE_EXTERIOR, width: 1200, height: 800, alt: 'Casa con vista al lago' },
     ],
   },
   // CABA - Microcentro / San Telmo / Palermo Soho
@@ -370,8 +431,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'San Telmo',
     city: 'Buenos Aires',
     amenities: ['Parquet original', 'Parrilla', 'Seguridad', 'Balcón', 'Apto mascotas'],
+    departmentId: 'caba-ciudad',
+    localityId: 'san-telmo',
     images: [
-      { url: `${MOCK_UNSPLASH}/santelmo1.jpg`, width: 800, height: 600, alt: 'Living con parquet' },
+      { url: HD_BALCONY, width: 1200, height: 800, alt: 'Living con parquet' },
     ],
   },
   {
@@ -392,8 +455,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Microcentro',
     city: 'Buenos Aires',
     amenities: ['Piscina', 'Gimnasio', 'Parrilla', 'Balcón', 'Vistas a la plaza'],
+    departmentId: 'caba-ciudad',
+    localityId: 'microcentro-caba',
     images: [
-      { url: `${MOCK_UNSPLASH}/microcentro1.jpg`, width: 800, height: 600, alt: 'Depto con vista' },
+      { url: HD_APT_MODERN, width: 1200, height: 800, alt: 'Depto con vista' },
     ],
   },
   {
@@ -414,8 +479,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Palermo Soho',
     city: 'Buenos Aires',
     amenities: ['Patio privado', 'Parrilla', 'Cocina integral', 'Balcón'],
+    departmentId: 'caba-ciudad',
+    localityId: 'palermo',
     images: [
-      { url: `${MOCK_UNSPLASH}/palermo-soho1.jpg`, width: 800, height: 600, alt: 'Patio interior' },
+      { url: HD_BALCONY, width: 1200, height: 800, alt: 'Patio interior' },
     ],
   },
   // Córdoba - Capital y zona
@@ -437,8 +504,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Córdoba',
     amenities: ['Parrilla', 'Balcón', 'Cocina completa', 'Patio compartido'],
+    departmentId: 'capital-cordoba',
+    localityId: 'nueva-cordoba',
     images: [
-      { url: `${MOCK_UNSPLASH}/cordoba-centro1.jpg`, width: 800, height: 600, alt: 'Depto en centro' },
+      { url: HD_APT_LOFT, width: 1200, height: 800, alt: 'Depto en centro' },
     ],
   },
   {
@@ -459,8 +528,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Residencial',
     city: 'La Cumbre',
     amenities: ['Cochera', 'Parrilla', 'Jardín', 'Apto mascotas', 'Cocina integral'],
+    departmentId: 'la-cumbre',
+    localityId: 'centro-lc',
     images: [
-      { url: `${MOCK_UNSPLASH}/la-cumbre1.jpg`, width: 800, height: 600, alt: 'Fachada de casa' },
+      { url: HD_HOUSE_INTERIOR, width: 1200, height: 800, alt: 'Fachada de casa' },
     ],
   },
   {
@@ -480,8 +551,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Barrio Nuevo',
     city: 'Río Cuarto',
     amenities: ['Estacionamiento', 'Gimnasio', 'Cerro vista', 'Cocina completa'],
+    departmentId: 'rio-cuarto',
+    localityId: 'centro-rc',
     images: [
-      { url: `${MOCK_UNSPLASH}/rio-cuarto1.jpg`, width: 800, height: 600, alt: 'Depto con vista' },
+      { url: HD_APT_MODERN, width: 1200, height: 800, alt: 'Depto con vista' },
     ],
   },
   // Santa Fe - Capital y zona
@@ -503,8 +576,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Santa Fe',
     amenities: ['Parrilla', 'Balcón', 'Cocina completa', 'Cercanía Universidad'],
+    departmentId: 'la-capital',
+    localityId: 'santa-fe-ciudad',
     images: [
-      { url: `${MOCK_UNSPLASH}/santafe-centro1.jpg`, width: 800, height: 600, alt: 'Depto en centro' },
+      { url: HD_BALCONY, width: 1200, height: 800, alt: 'Depto en centro' },
     ],
   },
   {
@@ -525,8 +600,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Barrio Nuevo',
     city: 'Reconquista',
     amenities: ['Pileta privada', 'Parrilla', 'Jardín', 'Garage 2 autos', 'Apto mascotas'],
+    departmentId: 'reconquista',
+    localityId: 'centro-reconquista',
     images: [
-      { url: `${MOCK_UNSPLASH}/reconquista1.jpg`, width: 800, height: 600, alt: 'Casa con pileta' },
+      { url: HD_HOUSE_INTERIOR, width: 1200, height: 800, alt: 'Casa con pileta' },
     ],
   },
   // Buenos Aires provincia - La Plata / Tigre / Pinamar
@@ -548,8 +625,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'La Plata',
     amenities: ['A pasos Universidad', 'Parrilla', 'Cocina completa', 'Balcón', 'WiFi'],
+    departmentId: 'la-plata',
+    localityId: 'centro',
     images: [
-      { url: `${MOCK_UNSPLASH}/la-plata1.jpg`, width: 800, height: 600, alt: 'Depto céntrico' },
+      { url: HD_APT_LOFT, width: 1200, height: 800, alt: 'Depto céntrico' },
     ],
   },
   {
@@ -570,8 +649,10 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Centro',
     city: 'Tigre',
     amenities: ['Cobertura', 'Parrilla', 'Cocina integral', 'Bodega', 'Garage', 'Río cercano'],
+    departmentId: 'tigre',
+    localityId: 'centro-tigre',
     images: [
-      { url: `${MOCK_UNSPLASH}/tigre1.jpg`, width: 800, height: 600, alt: 'Casa con cobertura' },
+      { url: HD_HOUSE_EXTERIOR, width: 1200, height: 800, alt: 'Casa con cobertura' },
     ],
   },
   {
@@ -593,8 +674,9 @@ const MOCK_PROPERTIES: MockPropertyData[] = [
     neighborhood: 'Apto playa',
     city: 'Pinamar',
     amenities: ['Playa a 5 cuadras', 'Parrilla', 'Jardín', 'Cochera', 'Apto mascotas'],
+    departmentId: 'pinamar',
     images: [
-      { url: `${MOCK_UNSPLASH}/pinamar1.jpg`, width: 800, height: 600, alt: 'Cabaña con jardín' },
+      { url: HD_HOUSE_INTERIOR, width: 1200, height: 800, alt: 'Cabaña con jardín' },
     ],
   },
 ];
@@ -671,6 +753,8 @@ export async function seedMockProperties(
       address: mock.address,
       neighborhood: mock.neighborhood,
       city: mock.city,
+      departmentId: mock.departmentId,
+      localityId: mock.localityId,
       images: mock.images,
       amenities: mock.amenities,
       publisherId: publisher.id,
