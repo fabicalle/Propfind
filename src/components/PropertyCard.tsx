@@ -59,7 +59,7 @@ export function PropertyCard({ property, isTop, dragOffset, isDragging, variant 
       exit={{ scale: 0.95, opacity: 0 }}
       transition={motionTokens.spring.gentle}
       className={isSwipeCard ? 'w-full h-full' : 'relative h-[320px] sm:h-[400px] md:h-[480px] overflow-hidden rounded-3xl border border-border-subtle/60 bg-app p-1.5 shadow-[0_2px_16px_rgba(0,0,0,0.03)]'}
-      onClick={!isSwipeCard ? handleCardClick : undefined}
+      onClick={handleCardClick}
       style={{
         x: isTop && isDragging ? dragOffset.x : 0,
         rotate,

@@ -275,17 +275,17 @@ export class PrismaPropertyRepository implements PropertyRepository {
     const offset = (page - 1) * limit;
     const hasGeo = lat != null && lng != null;
 
-    let opCondition: string | null = null;
-    const effectiveListingType = operationType ?? filters?.listingType;
-    if (effectiveListingType) {
-      const dbType = effectiveListingType === 'SALE' ? 'sale' : effectiveListingType === 'RENT' ? 'rent' : effectiveListingType;
-      opCondition = `p.listing_type = '${dbType}'`;
-    }
-
     const buildQuery = (useGeo: boolean): { whereClause: string; params: (string | number | string[] | boolean)[]; distanceExpr: string } => {
       const conditions: string[] = ['p.is_active = true'];
-      if (opCondition) conditions.push(opCondition);
       const queryParams: (string | number | string[] | boolean)[] = [];
+
+      const effectiveListingType = operationType ?? filters?.listingType;
+      if (effectiveListingType) {
+        const dbType = effectiveListingType === 'SALE' ? 'sale' : effectiveListingType === 'RENT' ? 'rent' : effectiveListingType;
+        const ltIdx = queryParams.length + 1;
+        queryParams.push(dbType);
+        conditions.push(`p.listing_type = $${ltIdx}`);
+      }
 
       const buildTextSearchCondition = (text: string) => {
         const words = text.trim().split(/\s+/).filter((w) => w.length > 0);

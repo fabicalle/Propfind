@@ -205,7 +205,7 @@ export class MockPropertyRepository implements PropertyRepository {
         if (filters?.bedrooms?.length && !(filters.bedrooms.includes(p.bedrooms ?? 0))) return false;
         if (filters?.rooms?.length && !(filters.rooms.includes(p.rooms ?? 0))) return false;
         if (filters?.bathrooms != null && (p.bathrooms ?? 0) < filters.bathrooms) return false;
-        if (filters?.amenities?.length && !filters.amenities.some((a) => p.amenities?.includes(a))) return false;
+        if (filters?.amenities?.length && !filters.amenities.every((a) => p.amenities?.includes(a))) return false;
         if (filters?.creditApproved != null && p.creditApproved !== filters.creditApproved) return false;
         if (filters?.parking && p.parking !== filters.parking) return false;
         if (filters?.sellerType && p.sellerType !== filters.sellerType) return false;
