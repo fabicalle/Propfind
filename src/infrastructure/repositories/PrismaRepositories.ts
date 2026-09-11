@@ -284,7 +284,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
         const dbType = effectiveListingType === 'SALE' ? 'sale' : effectiveListingType === 'RENT' ? 'rent' : effectiveListingType;
         const ltIdx = queryParams.length + 1;
         queryParams.push(dbType);
-        conditions.push(`p.listing_type = $${ltIdx}`);
+        conditions.push(`p.listing_type = $${ltIdx}::"ListingType"`);
       }
 
       const buildTextSearchCondition = (text: string) => {
@@ -398,7 +398,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
       if (filters?.sellerType) {
         const stIdx = queryParams.length + 1;
         queryParams.push(filters.sellerType);
-        conditions.push(`p.seller_type = $${stIdx}`);
+        conditions.push(`p.seller_type = $${stIdx}::"SellerType"`);
       }
 
       if (filters?.currency) {
