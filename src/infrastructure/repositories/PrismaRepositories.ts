@@ -5,6 +5,14 @@ import { SearchParams, PagedResult } from '@/types/search';
 import { prisma } from '@/lib/prisma';
 import { PropertyType } from '@prisma/client';
 import type { Prisma } from '@prisma/client';
+import {
+  parsePropertyType,
+  parseListingType,
+  parseSellerType,
+  validatePropertyTypes,
+  validateListingTypes,
+  validateSellerTypes,
+} from '@/lib/prisma-enum-helpers';
 
 export class PrismaPropertyRepository implements PropertyRepository {
   private toProperty(row: Record<string, unknown>): Property {
@@ -114,24 +122,33 @@ export class PrismaPropertyRepository implements PropertyRepository {
       whereConditions.push(`p.bedrooms = ANY($${queryParams.length}::int[])`);
     }
     if (filters.propertyTypes && filters.propertyTypes.length > 0) {
-      queryParams.push(filters.propertyTypes);
-      whereConditions.push(`p.property_type = ANY($${queryParams.length}::"PropertyType"[])`);
+      const validatedTypes = validatePropertyTypes(filters.propertyTypes);
+      if (validatedTypes.length > 0) {
+        queryParams.push(validatedTypes);
+        whereConditions.push(`p.property_type = ANY($${queryParams.length}::"PropertyType"[])`);
+      }
     }
     if (filters.currency) {
       queryParams.push(filters.currency);
       whereConditions.push(`p.price_currency = $${queryParams.length}`);
     }
     if (filters.listingType) {
-      queryParams.push(filters.listingType);
-      whereConditions.push(`p.listing_type = $${queryParams.length}::"ListingType"`);
+      const validatedType = parseListingType(filters.listingType);
+      if (validatedType) {
+        queryParams.push(validatedType);
+        whereConditions.push(`p.listing_type = $${queryParams.length}::"ListingType"`);
+      }
     }
     if (filters.listingSubType) {
       queryParams.push(filters.listingSubType);
       whereConditions.push(`p.listing_sub_type = $${queryParams.length}`);
     }
     if (filters.sellerType) {
-      queryParams.push(filters.sellerType);
-      whereConditions.push(`p.seller_type = $${queryParams.length}::"SellerType"`);
+      const validatedType = parseSellerType(filters.sellerType);
+      if (validatedType) {
+        queryParams.push(validatedType);
+        whereConditions.push(`p.seller_type = $${queryParams.length}::"SellerType"`);
+      }
     }
     if (filters.creditApproved !== undefined) {
       queryParams.push(filters.creditApproved);
@@ -281,10 +298,12 @@ export class PrismaPropertyRepository implements PropertyRepository {
 
       const effectiveListingType = operationType ?? filters?.listingType;
       if (effectiveListingType) {
-        const dbType = effectiveListingType === 'SALE' ? 'sale' : effectiveListingType === 'RENT' ? 'rent' : effectiveListingType;
-        const ltIdx = queryParams.length + 1;
-        queryParams.push(dbType);
-        conditions.push(`p.listing_type = $${ltIdx}::"ListingType"`);
+        const validatedType = parseListingType(effectiveListingType);
+        if (validatedType) {
+          const ltIdx = queryParams.length + 1;
+          queryParams.push(validatedType);
+          conditions.push(`p.listing_type = $${ltIdx}::"ListingType"`);
+        }
       }
 
       const buildTextSearchCondition = (text: string) => {
@@ -335,11 +354,14 @@ export class PrismaPropertyRepository implements PropertyRepository {
       }
 
       if (filters?.propertyTypes?.length) {
-        const placeholders = filters.propertyTypes.map((type) => {
-          queryParams.push(type);
-          return `$${queryParams.length}::"PropertyType"`;
-        });
-        conditions.push(`p.property_type IN (${placeholders.join(', ')})`);
+        const validatedTypes = validatePropertyTypes(filters.propertyTypes);
+        if (validatedTypes.length > 0) {
+          const placeholders = validatedTypes.map((type) => {
+            queryParams.push(type);
+            return `$${queryParams.length}::"PropertyType"`;
+          });
+          conditions.push(`p.property_type IN (${placeholders.join(', ')})`);
+        }
       }
 
       if (filters?.priceMin != null) {
@@ -396,9 +418,12 @@ export class PrismaPropertyRepository implements PropertyRepository {
       }
 
       if (filters?.sellerType) {
-        const stIdx = queryParams.length + 1;
-        queryParams.push(filters.sellerType);
-        conditions.push(`p.seller_type = $${stIdx}::"SellerType"`);
+        const validatedType = parseSellerType(filters.sellerType);
+        if (validatedType) {
+          const stIdx = queryParams.length + 1;
+          queryParams.push(validatedType);
+          conditions.push(`p.seller_type = $${stIdx}::"SellerType"`);
+        }
       }
 
       if (filters?.currency) {
