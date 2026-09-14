@@ -230,6 +230,7 @@ Abrir [localhost:3000](http://localhost:3000) en el navegador.
 
 | Comando | Descripción |
 |---------|-------------|
+
 | `npm run dev` | Inicia el servidor de desarrollo (Next.js 16 + Turbopack) |
 | `npm run build` | Genera build de producción (prerender estático + dinámico) |
 | `npm run start` | Inicia servidor en modo producción |
@@ -247,6 +248,7 @@ Abrir [localhost:3000](http://localhost:3000) en el navegador.
 
 | Token | Valor | Uso |
 |-------|-------|-----|
+
 | Fondo cálido | `#F5F2EB` | Fondos de página y cards |
 | Texto principal | `#231F1D` | Títulos y cuerpo de texto |
 | Acento terracota | `#C86D51` | CTAs primarios, badges "ME INTERESA" |

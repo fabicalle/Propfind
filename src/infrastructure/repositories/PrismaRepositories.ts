@@ -115,7 +115,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
     }
     if (filters.propertyTypes && filters.propertyTypes.length > 0) {
       queryParams.push(filters.propertyTypes);
-      whereConditions.push(`p.property_type = ANY($${queryParams.length}::text[])`);
+      whereConditions.push(`p.property_type = ANY($${queryParams.length}::"PropertyType"[])`);
     }
     if (filters.currency) {
       queryParams.push(filters.currency);
@@ -337,7 +337,7 @@ export class PrismaPropertyRepository implements PropertyRepository {
       if (filters?.propertyTypes?.length) {
         const placeholders = filters.propertyTypes.map((type) => {
           queryParams.push(type);
-          return `$${queryParams.length}`;
+          return `$${queryParams.length}::"PropertyType"`;
         });
         conditions.push(`p.property_type IN (${placeholders.join(', ')})`);
       }
