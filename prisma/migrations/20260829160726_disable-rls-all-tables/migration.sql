@@ -1,0 +1,8 @@
+DO 
+DECLARE
+  r record;
+BEGIN
+  FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+    EXECUTE format('ALTER TABLE IF EXISTS public.%I DISABLE ROW LEVEL SECURITY', r.tablename);
+  END LOOP;
+END ;

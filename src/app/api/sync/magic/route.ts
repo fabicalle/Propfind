@@ -1,0 +1,47 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+import { getSessionFromRequest } from '@/lib/supabase/session';
+import { rejectInvalidOrigin } from '@/lib/security/origin';
+import { withCsrf } from '@/lib/security/withCsrf';
+import { withRateLimit } from '@/lib/rateLimit';
+import { logAuthFailure } from '@/lib/security/auditLog';
+
+const MagicSyncSchema = z.object({
+  filters: z.record(z.unknown()).optional(),
+  sessionId: z.string().optional(),
+  propertyId: z.string().optional(),
+});
+
+async function POST_impl(request: NextRequest) {
+  const originError = rejectInvalidOrigin(request);
+  if (originError) return originError;
+
+  try {
+    const session = await getSessionFromRequest(request);
+    if (!session?.user?.id) {
+      logAuthFailure(request, 'missing_session');
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { filters, sessionId, propertyId } = MagicSyncSchema.parse(body);
+
+    if (!sessionId && !filters) {
+      return NextResponse.json(
+        { error: 'Se requiere sessionId o filters' },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors[0]?.message || 'Invalid input' }, { status: 400 });
+    }
+    return NextResponse.json({ error: 'Error en sync' }, { status: 500 });
+  }
+}
+
+export const POST = withRateLimit(withCsrf(POST_impl));
